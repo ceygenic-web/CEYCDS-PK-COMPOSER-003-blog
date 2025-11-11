@@ -1,0 +1,45 @@
+{
+    "name": "ceygenic/packagename",
+    "description": "Laravel package: __PACKAGE__",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Your Name",
+            "email": "you@example.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.0",
+        "orchestra/testbench": "^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ceygenic\\__PackageStudly\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Ceygenic\\__PackageStudly\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Ceygenic\\__PackageStudly\\__PackageStudlyServiceProvider"
+            ],
+            "aliases": {
+                "__PackageStudly": "Ceygenic\\__PackageStudly\\Facades\\__PackageStudly"
+            }
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "scripts": {
+        "test": "vendor/bin/phpunit"
+    }
+}
+
