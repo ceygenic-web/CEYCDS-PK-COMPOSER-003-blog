@@ -1,45 +1,65 @@
 {
-    "name": "ceygenic/packagename",
-    "description": "Laravel package: __PACKAGE__",
+    "name": "ceygenic/blog-core",
+    "description": "The Blog Package lets you easily add and manage blog posts, categories, and comments in your Laravel project. Simple to install and customize.",
     "type": "library",
     "license": "MIT",
     "authors": [
         {
-            "name": "Your Name",
-            "email": "you@example.com"
+            "name": "Nethmi",
+            "email": "sathruwanihapuarachchi7@gmail.com"
         }
     ],
     "require": {
-        "php": "^8.2"
+        "php": "^8.2",
+        "illuminate/support": "^10.0|^11.0",
+        "illuminate/database": "^10.0|^11.0",
+        "illuminate/routing": "^10.0|^11.0",
+        "illuminate/http": "^10.0|^11.0",
+        "illuminate/validation": "^10.0|^11.0",
+        "guzzlehttp/guzzle": "^7.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^11.0",
-        "orchestra/testbench": "^10.0"
+        "orchestra/testbench": "^9.0"
     },
     "autoload": {
         "psr-4": {
-            "Ceygenic\\__PackageStudly\\": "src/"
+            "Ceygenic\\Blog\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Ceygenic\\__PackageStudly\\Tests\\": "tests/"
+            "Ceygenic\\Blog\\Tests\\": "tests/",
+            "Workbench\\App\\": "workbench/app/",
+            "Workbench\\Database\\Factories\\": "workbench/database/factories/",
+            "Workbench\\Database\\Seeders\\": "workbench/database/seeders/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Ceygenic\\__PackageStudly\\__PackageStudlyServiceProvider"
+                "Ceygenic\\Blog\\BlogServiceProvider"
             ],
             "aliases": {
-                "__PackageStudly": "Ceygenic\\__PackageStudly\\Facades\\__PackageStudly"
+                "Blog": "Ceygenic\\Blog\\Facades\\Blog"
             }
         }
     },
     "minimum-stability": "dev",
     "prefer-stable": true,
     "scripts": {
-        "test": "vendor/bin/phpunit"
+        "test": "vendor/bin/phpunit",
+        "post-autoload-dump": [
+            "@clear",
+            "@prepare"
+        ],
+        "clear": "@php vendor/bin/testbench package:purge-skeleton --ansi",
+        "prepare": "@php vendor/bin/testbench package:discover --ansi",
+        "build": "@php vendor/bin/testbench workbench:build --ansi",
+        "serve": [
+            "Composer\\Config::disableProcessTimeout",
+            "@build",
+            "@php vendor/bin/testbench serve --ansi"
+        ]
     }
 }
-

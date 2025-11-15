@@ -1,16 +1,15 @@
 <?php
 
-namespace Ceygenic\__PackageStudly\Tests;
+namespace Ceygenic\Blog\Tests;
 
-use Ceygenic\__PackageStudly\__PackageStudly__;
-
+use Ceygenic\Blog\Facades\Blog;
 
 class ExampleTest extends TestCase
 {
     public function testVersionReturnsString(): void
     {
-        $pkg = new __PackageStudly__();
-        $this->assertIsString($pkg->version());
+        $version = Blog::version();
+        $this->assertIsString($version);
     }
 }
 

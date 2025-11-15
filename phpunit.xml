@@ -4,8 +4,8 @@
          bootstrap="vendor/autoload.php"
          colors="true">
     <testsuites>
-        <testsuite name="__PackageStudly Test Suite">
-            <directory suffix="Test.php">./tests</directory>
+        <testsuite name="Dual Storage System Test Suite">
+            <directory suffix="Test.php">./tests/Feature</directory>
         </testsuite>
     </testsuites>
     <source>
