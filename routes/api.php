@@ -29,6 +29,7 @@ Route::prefix('api/blog')->name('blog.api.')->middleware('throttle:120,1')->grou
     
     // Authors
     Route::get('/authors/{author}', [PublicAuthorController::class, 'show'])->name('authors.show');
+    Route::get('/authors/{author}/posts', [PublicAuthorController::class, 'posts'])->name('authors.posts');
 });
 
 // Admin API Routes (Protected)

@@ -19,6 +19,20 @@ return [
     'reading_time' => [
         'words_per_minute' => env('BLOG_READING_TIME_WPM', 200),
     ],
+
+    // Author Configuration - Configuration for author management.
+    'author' => [
+        // User model class - defaults to Laravel's default User model
+        'user_model' => env('BLOG_USER_MODEL', config('auth.providers.users.model', 'App\\Models\\User')),
+    ],
+
+    // Model Configuration - Override default models if needed.
+    'models' => [
+        'post' => \Ceygenic\Blog\Models\Post::class,
+        'category' => \Ceygenic\Blog\Models\Category::class,
+        'tag' => \Ceygenic\Blog\Models\Tag::class,
+        'author_profile' => \Ceygenic\Blog\Models\AuthorProfile::class,
+    ],
 ];
 
 
