@@ -107,6 +107,30 @@ class Blog
     {
         return $this->postRepository->getArchived();
     }
+
+    // Get all categories ordered by order field.
+    public function getCategoriesOrdered()
+    {
+        return $this->categoryRepository->allOrdered();
+    }
+
+    // Move category up in order.
+    public function moveCategoryUp(int $id): bool
+    {
+        return $this->categoryRepository->moveUp($id);
+    }
+
+    // Move category down in order.
+    public function moveCategoryDown(int $id): bool
+    {
+        return $this->categoryRepository->moveDown($id);
+    }
+
+    // Set category order position.
+    public function setCategoryOrder(int $id, int $order): bool
+    {
+        return $this->categoryRepository->setOrder($id, $order);
+    }
 }
 
 

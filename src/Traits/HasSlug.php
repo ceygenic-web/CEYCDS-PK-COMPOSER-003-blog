@@ -12,15 +12,21 @@ trait HasSlug
     protected static function bootHasSlug(): void
     {
         static::creating(function ($model) {
-            if (empty($model->slug) && isset($model->title)) {
-                $model->slug = static::generateUniqueSlug($model->title);
+            if (empty($model->slug)) {
+                $sourceField = $model->title ?? $model->name ?? null;
+                if ($sourceField) {
+                    $model->slug = static::generateUniqueSlug($sourceField);
+                }
             }
         });
 
         static::updating(function ($model) {
-            // If title changed and slug wasn't manually set, regenerate slug
-            if ($model->isDirty('title') && !$model->isDirty('slug')) {
-                $model->slug = static::generateUniqueSlug($model->title, $model->id);
+            // If title or name changed and slug wasn't manually set, regenerate slug
+            if (empty($model->slug) || ($model->isDirty('title') || $model->isDirty('name')) && !$model->isDirty('slug')) {
+                $sourceField = $model->title ?? $model->name ?? null;
+                if ($sourceField) {
+                    $model->slug = static::generateUniqueSlug($sourceField, $model->id);
+                }
             }
         });
     }
@@ -76,8 +82,13 @@ trait HasSlug
      */
     public function setSlugAttribute(?string $value): void
     {
-        if (empty($value) && isset($this->attributes['title'])) {
-            $this->attributes['slug'] = static::generateUniqueSlug($this->attributes['title'], $this->id);
+        if (empty($value)) {
+            $sourceField = $this->attributes['title'] ?? $this->attributes['name'] ?? null;
+            if ($sourceField) {
+                $this->attributes['slug'] = static::generateUniqueSlug($sourceField, $this->id);
+            } else {
+                $this->attributes['slug'] = $value;
+            }
         } else {
             $this->attributes['slug'] = $value;
         }

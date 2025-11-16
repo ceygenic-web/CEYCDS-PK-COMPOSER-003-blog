@@ -101,5 +101,28 @@ class SanityCategoryRepository implements CategoryRepositoryInterface
     {
         throw new \RuntimeException('Sanity delete operation not yet implemented. Use Sanity Studio or implement mutations API.');
     }
+
+    public function allOrdered(): Collection
+    {
+        $query = '*[_type == "category"]{_id, name, slug, description, order} | order(order asc, name asc)';
+        $results = $this->query($query);
+        
+        return new Collection(array_map([$this, 'transformSanityCategory'], $results));
+    }
+
+    public function moveUp(int $id): bool
+    {
+        throw new \RuntimeException('Sanity moveUp operation not yet implemented. Use Sanity Studio or implement mutations API.');
+    }
+
+    public function moveDown(int $id): bool
+    {
+        throw new \RuntimeException('Sanity moveDown operation not yet implemented. Use Sanity Studio or implement mutations API.');
+    }
+
+    public function setOrder(int $id, int $order): bool
+    {
+        throw new \RuntimeException('Sanity setOrder operation not yet implemented. Use Sanity Studio or implement mutations API.');
+    }
 }
 

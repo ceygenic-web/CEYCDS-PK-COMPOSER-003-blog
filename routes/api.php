@@ -47,6 +47,11 @@ Route::prefix('api/blog/admin')->name('blog.api.admin.')->middleware(['auth:sanc
     // Categories CRUD
     Route::apiResource('categories', AdminCategoryController::class);
     
+    // Category Order Management
+    Route::post('/categories/{id}/move-up', [AdminCategoryController::class, 'moveUp'])->name('categories.move-up');
+    Route::post('/categories/{id}/move-down', [AdminCategoryController::class, 'moveDown'])->name('categories.move-down');
+    Route::post('/categories/{id}/set-order', [AdminCategoryController::class, 'setOrder'])->name('categories.set-order');
+    
     // Media
     Route::post('/media/upload', [AdminMediaController::class, 'upload'])->name('media.upload');
 });

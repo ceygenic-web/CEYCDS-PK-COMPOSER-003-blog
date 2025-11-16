@@ -1,54 +1,76 @@
-# Blog Package (ceygenic/blog-core)
+# Blog Package Installation Guide
 
-A comprehensive Laravel package for managing blog posts, categories, tags, and authors. This package provides a complete RESTful API with public and admin endpoints, supporting both database and Sanity CMS storage drivers.
+This guide provides step-by-step instructions for installing and configuring the Blog Package in your Laravel application.
 
-## 📋 Features
+## 📋 Prerequisites
 
-- ✅ Complete RESTful API (JSON:API compliant)
-- ✅ Public and Admin endpoints
-- ✅ Support for multiple storage drivers (Database & Sanity CMS)
-- ✅ Advanced filtering, sorting, and pagination
-- ✅ Automatic reading time calculation
-- ✅ Slug generation for posts, categories, and tags
-- ✅ Post status management (draft, published, archived)
-- ✅ Post scheduling and archiving
-- ✅ Media upload support
-- ✅ Rate limiting
-- ✅ Laravel Sanctum authentication for admin endpoints
-
-## 📋 Requirements
+Before installing this package, ensure you have:
 
 - **PHP** >= 8.2
 - **Laravel** >= 10.0 or >= 11.0
-- **Composer**
-- **Database** (MySQL, PostgreSQL, SQLite, etc.)
-- **Laravel Sanctum** (for admin API authentication)
+- **Composer** installed
+- **Database** configured (MySQL, PostgreSQL, SQLite, etc.)
+- **Laravel Sanctum** installed (for admin API authentication)
 
 ---
 
-## 🚀 Installation & Setup
+## 🚀 Step 1: Install the Package
 
-### Step 1: Install the Package
+### Option A: Install from Packagist (Recommended)
 
-Install the package via Composer:
+If the package is published on Packagist:
 
 ```bash
 composer require ceygenic/blog-core
 ```
 
-### Step 2: Publish Configuration
+### Option B: Install from Local/Private Repository
 
-Publish the configuration file:
+If installing from a local path or private repository:
+
+```bash
+composer require ceygenic/blog-core:dev-main
+```
+
+Or add to your `composer.json`:
+
+```json
+{
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../CEYCDS-PK-COMPOSER-003-blog"
+        }
+    ],
+    "require": {
+        "ceygenic/blog-core": "@dev"
+    }
+}
+```
+
+Then run:
+
+```bash
+composer update
+```
+
+---
+
+## ⚙️ Step 2: Publish Configuration
+
+Publish the configuration file to customize package settings:
 
 ```bash
 php artisan vendor:publish --tag=blog-config
 ```
 
-This creates a `config/blog.php` file in your Laravel application.
+This creates a `config/blog.php` file in your Laravel application's `config` directory.
 
-### Step 3: Configure Environment Variables
+---
 
-Add the following to your `.env` file:
+## 🔧 Step 3: Configure Environment Variables
+
+Add the following environment variables to your `.env` file:
 
 ```env
 # Blog Package Configuration
@@ -65,7 +87,7 @@ SANITY_DATASET=production
 SANITY_TOKEN=your-sanity-token
 ```
 
-**Configuration Options:**
+### Configuration Options Explained:
 
 | Variable | Description | Default | Required |
 |----------|-------------|---------|----------|
@@ -77,33 +99,131 @@ SANITY_TOKEN=your-sanity-token
 | `SANITY_DATASET` | Sanity dataset name | `production` | Yes (if using Sanity) |
 | `SANITY_TOKEN` | Sanity API token | - | Yes (if using Sanity) |
 
-### Step 4: Run Database Migrations
+---
 
-Run the migrations to create the required database tables:
+## 🗄️ Step 4: Run Database Migrations
 
-   ```bash
-php artisan migrate
-```
-
-**Tables Created:**
+The package includes migrations for the following tables:
 - `categories` - Blog categories
 - `tags` - Blog tags
 - `posts` - Blog posts
 - `post_tag` - Pivot table for post-tag relationships
 
-**Note:** If using the Sanity driver (`BLOG_DRIVER=sanity`), you don't need to run migrations as data is stored in Sanity CMS.
+Run the migrations:
 
-### Step 5: Install Laravel Sanctum (For Admin API)
+```bash
+php artisan migrate
+```
 
-The admin API endpoints require Laravel Sanctum authentication. If you haven't installed it:
+### Migration Details:
 
-   ```bash
+The migrations will create:
+
+1. **categories** table:
+   - `id` (primary key)
+   - `name` (string)
+   - `slug` (unique string)
+   - `description` (text, nullable)
+   - `timestamps`
+
+2. **tags** table:
+   - `id` (primary key)
+   - `name` (string)
+   - `slug` (unique string)
+   - `timestamps`
+
+3. **posts** table:
+   - `id` (primary key)
+   - `title` (string)
+   - `slug` (unique string)
+   - `excerpt` (text, nullable)
+   - `content` (longText)
+   - `featured_image` (string, nullable)
+   - `category_id` (foreign key to categories, nullable)
+   - `author_id` (foreign key to users, nullable)
+   - `status` (enum: draft, published, archived)
+   - `published_at` (timestamp, nullable)
+   - `reading_time` (integer, nullable)
+   - `timestamps`
+
+4. **post_tag** table (pivot):
+   - `post_id` (foreign key)
+   - `tag_id` (foreign key)
+
+### Customizing Migrations (Optional)
+
+If you need to customize the migrations, publish them first:
+
+```bash
+php artisan vendor:publish --tag=blog-migrations
+```
+
+This copies the migration files to `database/migrations/` where you can modify them before running `php artisan migrate`.
+
+---
+
+## 🔐 Step 5: Set Up Authentication (For Admin API)
+
+The admin API endpoints require Laravel Sanctum authentication. If you haven't installed Sanctum yet:
+
+### Install Laravel Sanctum
+
+```bash
 composer require laravel/sanctum
 php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
 php artisan migrate
-   ```
+```
 
-### Step 6: Install Required Dependencies
+### Configure Sanctum
+
+Add Sanctum middleware to your `app/Http/Kernel.php` (if not already added):
+
+```php
+'api' => [
+    \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+    'throttle:api',
+    \Illuminate\Routing\Middleware\SubstituteBindings::class,
+],
+```
+
+### Create API Token (For Testing)
+
+You can create a token for a user:
+
+```php
+// In tinker or a seeder
+$user = \App\Models\User::first();
+$token = $user->createToken('blog-admin')->plainTextToken;
+echo $token;
+```
+
+Or create a login endpoint in your application:
+
+```php
+// routes/api.php
+Route::post('/login', function (Request $request) {
+    $request->validate([
+        'email' => 'required|email',
+        'password' => 'required',
+    ]);
+
+    if (!Auth::attempt($request->only('email', 'password'))) {
+        return response()->json(['message' => 'Invalid credentials'], 401);
+    }
+
+    $user = Auth::user();
+    $token = $user->createToken('blog-admin')->plainTextToken;
+
+    return response()->json([
+        'token' => $token,
+        'user' => $user,
+    ]);
+});
+```
+
+---
+
+## 📦 Step 6: Install Required Dependencies
 
 The package requires `spatie/laravel-query-builder` for filtering and sorting. It should be installed automatically, but if not:
 
@@ -111,12 +231,36 @@ The package requires `spatie/laravel-query-builder` for filtering and sorting. I
 composer require spatie/laravel-query-builder
 ```
 
-### Step 7: Verify Installation
+---
+
+## ✅ Step 7: Verify Installation
+
+### Check Package Registration
+
+The package should be auto-discovered by Laravel. Verify it's registered:
+
+```bash
+php artisan package:discover
+```
+
+You should see `Ceygenic\Blog\BlogServiceProvider` in the list.
+
+### Test Routes
 
 Check if routes are registered:
 
 ```bash
 php artisan route:list | grep blog
+```
+
+You should see routes prefixed with `/api/blog`.
+
+### Test the API
+
+Start your Laravel development server:
+
+```bash
+php artisan serve
 ```
 
 Test a public endpoint:
@@ -125,11 +269,11 @@ Test a public endpoint:
 curl http://localhost:8000/api/blog/posts
 ```
 
-You should receive a JSON response.
+You should receive a JSON response with an empty data array (if no posts exist yet).
 
 ---
 
-## 📖 Usage
+## 🎯 Step 8: Using the Package
 
 ### Using the Facade
 
@@ -190,15 +334,11 @@ $posts = $blog->posts()->all();
 
 ---
 
-## 🌐 API Endpoints
-
-### Base URL
-
-All API endpoints are prefixed with `/api/blog`
+## 🌐 Step 9: API Endpoints
 
 ### Public Endpoints (No Authentication Required)
 
-Rate-limited to **120 requests per minute**.
+All public endpoints are rate-limited to 120 requests per minute.
 
 #### Posts
 
@@ -235,9 +375,9 @@ GET /api/blog/posts?filter[status]=published&sort=-published_at&per_page=10
 
 ### Admin Endpoints (Authentication Required)
 
-Rate-limited to **60 requests per minute**. Requires Sanctum authentication.
+All admin endpoints require Sanctum authentication and are rate-limited to 60 requests per minute.
 
-**Include token in header:**
+Include the token in the Authorization header:
 ```
 Authorization: Bearer {your-token}
 ```
@@ -278,7 +418,7 @@ Authorization: Bearer {your-token}
 
 ---
 
-## 📝 Example API Usage
+## 📝 Step 10: Example API Usage
 
 ### Create a Post (Admin)
 
@@ -323,49 +463,15 @@ curl -X POST http://localhost:8000/api/blog/admin/categories \
   }'
 ```
 
-### Get Authentication Token
-
-Create a login endpoint in your application:
-
-```php
-// routes/api.php
-Route::post('/login', function (Request $request) {
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required',
-    ]);
-
-    if (!Auth::attempt($request->only('email', 'password'))) {
-        return response()->json(['message' => 'Invalid credentials'], 401);
-    }
-
-    $user = Auth::user();
-    $token = $user->createToken('blog-admin')->plainTextToken;
-
-    return response()->json([
-        'token' => $token,
-        'user' => $user,
-    ]);
-});
-```
-
-Then login to get a token:
-
-```bash
-curl -X POST http://localhost:8000/api/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"password"}'
-```
-
 ---
 
-## 🔄 Storage Drivers
+## 🔄 Step 11: Switching Storage Drivers
 
 The package supports two storage drivers:
 
 ### Database Driver (Default)
 
-Uses Laravel Eloquent to store data in your database.
+Uses Laravel Eloquent to store data in your database. This is the default driver.
 
 ```env
 BLOG_DRIVER=db
@@ -373,7 +479,7 @@ BLOG_DRIVER=db
 
 ### Sanity CMS Driver
 
-Uses Sanity CMS as the backend.
+Uses Sanity CMS as the backend. Configure your Sanity credentials:
 
 ```env
 BLOG_DRIVER=sanity
@@ -386,7 +492,7 @@ SANITY_TOKEN=your-sanity-token
 
 ---
 
-## 🛠️ Artisan Commands
+## 🛠️ Step 12: Artisan Commands
 
 The package includes an Artisan command for verifying dual storage:
 
@@ -400,40 +506,65 @@ This command verifies that data is synchronized between database and Sanity (if 
 
 ## 🐛 Troubleshooting
 
-### Routes not found (404 errors)
+### Issue: Routes not found (404 errors)
 
+**Solution:**
 1. Clear route cache: `php artisan route:clear`
 2. Clear config cache: `php artisan config:clear`
 3. Verify package is discovered: `php artisan package:discover`
 4. Check routes: `php artisan route:list | grep blog`
 
-### Authentication errors on admin endpoints
+### Issue: Authentication errors on admin endpoints
 
+**Solution:**
 1. Ensure Sanctum is installed and configured
-2. Verify you're sending the token: `Authorization: Bearer {token}`
+2. Verify you're sending the token in the Authorization header: `Authorization: Bearer {token}`
 3. Check that the token is valid and not expired
 4. Verify the user exists in your database
 
-### QueryBuilder errors
+### Issue: QueryBuilder errors
 
+**Solution:**
 ```bash
 composer require spatie/laravel-query-builder
 ```
 
-### Migration errors
+### Issue: Migration errors
 
+**Solution:**
 1. Check if tables already exist: `php artisan migrate:status`
-2. Ensure your database connection is configured correctly in `.env`
+2. If tables exist, you may need to drop them first (be careful in production!)
+3. Ensure your database connection is configured correctly in `.env`
 
-### Package not auto-discovered
+### Issue: Package not auto-discovered
 
+**Solution:**
 1. Run: `php artisan package:discover`
 2. Check `composer.json` has the package in `require` section
-3. Run: `composer dump-autoload`
+3. Verify `composer dump-autoload` has been run
+
+### Issue: Class not found errors
+
+**Solution:**
+```bash
+composer dump-autoload
+php artisan config:clear
+php artisan cache:clear
+```
+
+---
+
+## 📚 Additional Resources
+
+- **API Documentation**: See `API_DOCUMENTATION.md` for detailed API reference
+- **Testing Guide**: See `HOW_TO_TEST_API.md` for testing instructions
+- **Post Management**: See `POST_MANAGEMENT_STEPS.md` for post management workflows
 
 ---
 
 ## ✅ Installation Checklist
+
+Use this checklist to ensure you've completed all installation steps:
 
 - [ ] Package installed via Composer
 - [ ] Configuration file published (`php artisan vendor:publish --tag=blog-config`)
@@ -448,27 +579,9 @@ composer require spatie/laravel-query-builder
 
 ---
 
-## 📚 Additional Documentation
-
-- **[API Documentation](API_DOCUMENTATION.md)** - Detailed API reference
-- **[Installation Guide](INSTALLATION_GUIDE.md)** - Comprehensive installation steps
-- **[How to Test API](HOW_TO_TEST_API.md)** - Testing instructions
-- **[Post Management](POST_MANAGEMENT_STEPS.md)** - Post management workflows
-
----
-
-## 📄 License
-
-This package is open-sourced software licensed under the [MIT license](LICENSE).
-
----
-
-## 👥 Support
-
-For issues, questions, or contributions, please refer to the project repository.
-
----
-
 ## 🎉 You're All Set!
 
 Your blog package is now installed and ready to use. Start creating posts, categories, and tags through the API or using the Facade in your code.
+
+For more information, refer to the API documentation or check the example usage above.
+

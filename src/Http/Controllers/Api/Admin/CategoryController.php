@@ -24,8 +24,9 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'slug' => 'required|string|max:255|unique:categories,slug',
+            'slug' => 'nullable|string|max:255|unique:categories,slug',
             'description' => 'nullable|string',
+            'order' => 'nullable|integer|min:0',
         ]);
 
         $category = Blog::categories()->create($validated);
@@ -72,8 +73,9 @@ class CategoryController extends Controller
 
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
-            'slug' => ['sometimes', 'string', 'max:255', Rule::unique('categories', 'slug')->ignore($id)],
+            'slug' => ['nullable', 'string', 'max:255', Rule::unique('categories', 'slug')->ignore($id)],
             'description' => 'nullable|string',
+            'order' => 'nullable|integer|min:0',
         ]);
 
         Blog::categories()->update($id, $validated);
@@ -102,6 +104,79 @@ class CategoryController extends Controller
         Blog::categories()->delete($id);
 
         return response()->json(null, 204);
+    }
+
+    // Move category up in order
+    public function moveUp(int $id): CategoryResource|JsonResponse
+    {
+        $category = Blog::categories()->find($id);
+
+        if (!$category) {
+            return response()->json([
+                'errors' => [
+                    [
+                        'status' => '404',
+                        'title' => 'Not Found',
+                        'detail' => 'Category not found',
+                    ]
+                ]
+            ], 404);
+        }
+
+        Blog::moveCategoryUp($id);
+        $category = Blog::categories()->find($id);
+
+        return new CategoryResource($category);
+    }
+
+    // Move category down in order
+    public function moveDown(int $id): CategoryResource|JsonResponse
+    {
+        $category = Blog::categories()->find($id);
+
+        if (!$category) {
+            return response()->json([
+                'errors' => [
+                    [
+                        'status' => '404',
+                        'title' => 'Not Found',
+                        'detail' => 'Category not found',
+                    ]
+                ]
+            ], 404);
+        }
+
+        Blog::moveCategoryDown($id);
+        $category = Blog::categories()->find($id);
+
+        return new CategoryResource($category);
+    }
+
+    // Set category order
+    public function setOrder(Request $request, int $id): CategoryResource|JsonResponse
+    {
+        $category = Blog::categories()->find($id);
+
+        if (!$category) {
+            return response()->json([
+                'errors' => [
+                    [
+                        'status' => '404',
+                        'title' => 'Not Found',
+                        'detail' => 'Category not found',
+                    ]
+                ]
+            ], 404);
+        }
+
+        $validated = $request->validate([
+            'order' => 'required|integer|min:0',
+        ]);
+
+        Blog::setCategoryOrder($id, $validated['order']);
+        $category = Blog::categories()->find($id);
+
+        return new CategoryResource($category);
     }
 }
 

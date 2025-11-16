@@ -11,12 +11,12 @@ class EloquentCategoryRepository implements CategoryRepositoryInterface
 {
     public function all(): Collection
     {
-        return Category::all();
+        return Category::ordered()->get();
     }
 
     public function paginate(int $perPage = 15): LengthAwarePaginator
     {
-        return Category::paginate($perPage);
+        return Category::ordered()->paginate($perPage);
     }
 
     public function find(int $id)
@@ -44,6 +44,29 @@ class EloquentCategoryRepository implements CategoryRepositoryInterface
     {
         $category = Category::findOrFail($id);
         return $category->delete();
+    }
+
+    public function allOrdered(): Collection
+    {
+        return Category::ordered()->get();
+    }
+
+    public function moveUp(int $id): bool
+    {
+        $category = Category::findOrFail($id);
+        return $category->moveUp();
+    }
+
+    public function moveDown(int $id): bool
+    {
+        $category = Category::findOrFail($id);
+        return $category->moveDown();
+    }
+
+    public function setOrder(int $id, int $order): bool
+    {
+        $category = Category::findOrFail($id);
+        return $category->setOrder($order);
     }
 }
 
