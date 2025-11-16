@@ -24,6 +24,7 @@ Route::prefix('api/blog')->name('blog.api.')->middleware('throttle:120,1')->grou
     
     // Tags
     Route::get('/tags', [PublicTagController::class, 'index'])->name('tags.index');
+    Route::get('/tags/popular', [PublicTagController::class, 'popular'])->name('tags.popular');
     Route::get('/tags/{tag}/posts', [PublicTagController::class, 'posts'])->name('tags.posts');
     
     // Authors

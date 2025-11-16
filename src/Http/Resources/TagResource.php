@@ -21,6 +21,7 @@ class TagResource extends JsonResource
                 'name' => $this->name ?? '',
                 'slug' => $this->slug ?? '',
                 'description' => $this->description ?? '',
+                'post_count' => $this->post_count ?? 0,
                 'created_at' => isset($this->created_at) && $this->created_at
                     ? (is_string($this->created_at) ? $this->created_at : $this->created_at->toIso8601String())
                     : null,

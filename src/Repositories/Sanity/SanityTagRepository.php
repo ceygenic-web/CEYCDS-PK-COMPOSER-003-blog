@@ -101,5 +101,23 @@ class SanityTagRepository implements TagRepositoryInterface
     {
         throw new \RuntimeException('Sanity delete operation not yet implemented. Use Sanity Studio or implement mutations API.');
     }
+
+    public function search(string $query, int $limit = 10): Collection
+    {
+        $sanityQuery = "*[_type == 'tag' && (name match '*{$query}*' || slug.current match '*{$query}*')]{_id, name, slug, description} | order(name asc) [0...{$limit}]";
+        $results = $this->query($sanityQuery);
+        
+        return new Collection(array_map([$this, 'transformSanityTag'], $results));
+    }
+
+    public function getPopular(int $limit = 10): Collection
+    {
+        // Note: This is a simplified implementation. 
+        // For a full implementation, you'd need to count posts per tag in Sanity
+        $sanityQuery = "*[_type == 'tag']{_id, name, slug, description} | order(name asc) [0...{$limit}]";
+        $results = $this->query($sanityQuery);
+        
+        return new Collection(array_map([$this, 'transformSanityTag'], $results));
+    }
 }
 

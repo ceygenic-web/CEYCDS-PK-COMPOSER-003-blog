@@ -45,5 +45,22 @@ class EloquentTagRepository implements TagRepositoryInterface
         $tag = Tag::findOrFail($id);
         return $tag->delete();
     }
-}
 
+    public function search(string $query, int $limit = 10): Collection
+    {
+        return Tag::where('name', 'like', "%{$query}%")
+            ->orWhere('slug', 'like', "%{$query}%")
+            ->limit($limit)
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function getPopular(int $limit = 10): Collection
+    {
+        return Tag::withCount('posts')
+            ->orderBy('posts_count', 'desc')
+            ->orderBy('name')
+            ->limit($limit)
+            ->get();
+    }
+}

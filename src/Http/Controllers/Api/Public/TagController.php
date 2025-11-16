@@ -16,6 +16,13 @@ class TagController extends Controller
    //List all tags
     public function index(Request $request): AnonymousResourceCollection
     {
+        // If search parameter is provided, use auto-complete search
+        if ($request->has('search') && !empty($request->get('search'))) {
+            $limit = $request->get('limit', 10);
+            $tags = Blog::tags()->search($request->get('search'), $limit);
+            return TagResource::collection($tags);
+        }
+
         $query = \Ceygenic\Blog\Models\Tag::query();
         
         $tags = QueryBuilder::for($query)
@@ -24,6 +31,14 @@ class TagController extends Controller
             ->defaultSort('name')
             ->paginate($request->get('per_page', 15));
 
+        return TagResource::collection($tags);
+    }
+
+    // Get popular tags
+    public function popular(Request $request): AnonymousResourceCollection
+    {
+        $limit = $request->get('limit', 10);
+        $tags = Blog::tags()->getPopular($limit);
         return TagResource::collection($tags);
     }
 

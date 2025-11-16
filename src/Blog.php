@@ -131,6 +131,18 @@ class Blog
     {
         return $this->categoryRepository->setOrder($id, $order);
     }
+
+    //Search tags by query (for auto-complete).
+    public function searchTags(string $query, int $limit = 10)
+    {
+        return $this->tagRepository->search($query, $limit);
+    }
+
+    // Get popular tags.
+    public function getPopularTags(int $limit = 10)
+    {
+        return $this->tagRepository->getPopular($limit);
+    }
 }
 
 
