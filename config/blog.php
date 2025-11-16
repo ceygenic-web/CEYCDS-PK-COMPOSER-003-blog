@@ -32,6 +32,32 @@ return [
         'category' => \Ceygenic\Blog\Models\Category::class,
         'tag' => \Ceygenic\Blog\Models\Tag::class,
         'author_profile' => \Ceygenic\Blog\Models\AuthorProfile::class,
+        'media' => \Ceygenic\Blog\Models\Media::class,
+    ],
+
+    // Media Configuration - Configuration for media storage.
+    'media' => [
+        // Storage disk to use (local, s3, cloudinary, etc.)
+        // This should be configured in config/filesystems.php
+        'disk' => env('BLOG_MEDIA_DISK', 'public'),
+        
+        // Directory within the disk where media files are stored
+        'directory' => env('BLOG_MEDIA_DIRECTORY', 'blog/media'),
+        
+        // Maximum file size in bytes (default: 10MB)
+        'max_file_size' => env('BLOG_MEDIA_MAX_SIZE', 10485760),
+        
+        // Allowed MIME types
+        'allowed_mime_types' => [
+            'image/jpeg',
+            'image/png',
+            'image/gif',
+            'image/webp',
+            'image/svg+xml',
+            'application/pdf',
+            'video/mp4',
+            'video/webm',
+        ],
     ],
 ];
 

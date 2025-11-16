@@ -55,6 +55,11 @@ Route::prefix('api/blog/admin')->name('blog.api.admin.')->middleware(['auth:sanc
     Route::post('/categories/{id}/set-order', [AdminCategoryController::class, 'setOrder'])->name('categories.set-order');
     
     // Media
+    Route::get('/media', [AdminMediaController::class, 'index'])->name('media.index');
     Route::post('/media/upload', [AdminMediaController::class, 'upload'])->name('media.upload');
+    Route::get('/media/{id}', [AdminMediaController::class, 'show'])->name('media.show');
+    Route::put('/media/{id}', [AdminMediaController::class, 'update'])->name('media.update');
+    Route::patch('/media/{id}', [AdminMediaController::class, 'update'])->name('media.update');
+    Route::delete('/media/{id}', [AdminMediaController::class, 'destroy'])->name('media.destroy');
 });
 
