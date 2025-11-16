@@ -157,7 +157,7 @@ class BlogVerifyDualStorageCommand extends Command
             $this->line('  - Database Tables: All exist');
             return self::SUCCESS;
         } else {
-            $this->warn('⚠️  Some components need attention.');
+            $this->warn(' Some components need attention.');
             if (!$allTablesExist) {
                 $this->line('   Run: php artisan migrate');
             }

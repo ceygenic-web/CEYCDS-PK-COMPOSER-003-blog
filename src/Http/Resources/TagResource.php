@@ -1,0 +1,37 @@
+<?php
+
+namespace Ceygenic\Blog\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class TagResource extends JsonResource
+{
+    /**
+     * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(Request $request): array
+    {
+        return [
+            'type' => 'tags',
+            'id' => (string) $this->id,
+            'attributes' => [
+                'name' => $this->name ?? '',
+                'slug' => $this->slug ?? '',
+                'description' => $this->description ?? '',
+                'created_at' => isset($this->created_at) && $this->created_at
+                    ? (is_string($this->created_at) ? $this->created_at : $this->created_at->toIso8601String())
+                    : null,
+                'updated_at' => isset($this->updated_at) && $this->updated_at
+                    ? (is_string($this->updated_at) ? $this->updated_at : $this->updated_at->toIso8601String())
+                    : null,
+            ],
+            'links' => [
+                'self' => url("/api/blog/tags/{$this->slug}"),
+            ],
+        ];
+    }
+}
+

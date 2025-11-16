@@ -140,5 +140,77 @@ class SanityPostRepository implements PostRepositoryInterface
             ['path' => request()->url(), 'query' => request()->query()]
         );
     }
+
+    public function createDraft(array $data)
+    {
+        // TODO: Implement Sanity mutation API call
+        throw new \RuntimeException('Sanity createDraft operation not yet implemented. Use Sanity Studio or implement mutations API.');
+    }
+
+    public function publish(int $id, ?\DateTime $publishedAt = null)
+    {
+        // TODO: Implement Sanity mutation API call
+        throw new \RuntimeException('Sanity publish operation not yet implemented. Use Sanity Studio or implement mutations API.');
+    }
+
+    public function unpublish(int $id)
+    {
+        // TODO: Implement Sanity mutation API call
+        throw new \RuntimeException('Sanity unpublish operation not yet implemented. Use Sanity Studio or implement mutations API.');
+    }
+
+    public function toggleStatus(int $id)
+    {
+        // TODO: Implement Sanity mutation API call
+        throw new \RuntimeException('Sanity toggleStatus operation not yet implemented. Use Sanity Studio or implement mutations API.');
+    }
+
+    public function schedule(int $id, \DateTime $date)
+    {
+        // TODO: Implement Sanity mutation API call
+        throw new \RuntimeException('Sanity schedule operation not yet implemented. Use Sanity Studio or implement mutations API.');
+    }
+
+    public function duplicate(int $id, ?string $newTitle = null)
+    {
+        // TODO: Implement Sanity mutation API call
+        throw new \RuntimeException('Sanity duplicate operation not yet implemented. Use Sanity Studio or implement mutations API.');
+    }
+
+    public function archive(int $id)
+    {
+        // TODO: Implement Sanity mutation API call
+        throw new \RuntimeException('Sanity archive operation not yet implemented. Use Sanity Studio or implement mutations API.');
+    }
+
+    public function restore(int $id)
+    {
+        // TODO: Implement Sanity mutation API call
+        throw new \RuntimeException('Sanity restore operation not yet implemented. Use Sanity Studio or implement mutations API.');
+    }
+
+    public function getDrafts(): Collection
+    {
+        $query = "*[_type == 'post' && status == 'draft']{_id, title, slug, excerpt, content, featuredImage, category, tags, status, publishedAt} | order(_createdAt desc)";
+        $results = $this->query($query);
+        
+        return new Collection(array_map([$this, 'transformSanityPost'], $results));
+    }
+
+    public function getScheduled(): Collection
+    {
+        $query = "*[_type == 'post' && status == 'published' && publishedAt > now()]{_id, title, slug, excerpt, content, featuredImage, category, tags, status, publishedAt} | order(publishedAt asc)";
+        $results = $this->query($query);
+        
+        return new Collection(array_map([$this, 'transformSanityPost'], $results));
+    }
+
+    public function getArchived(): Collection
+    {
+        $query = "*[_type == 'post' && status == 'archived']{_id, title, slug, excerpt, content, featuredImage, category, tags, status, publishedAt} | order(_updatedAt desc)";
+        $results = $this->query($query);
+        
+        return new Collection(array_map([$this, 'transformSanityPost'], $results));
+    }
 }
 

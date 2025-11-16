@@ -16,8 +16,10 @@ return new class extends Migration
             $table->longText('content');
             $table->string('featured_image')->nullable();
             $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('author_id')->nullable()->constrained('users')->nullOnDelete();
             $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
             $table->timestamp('published_at')->nullable();
+            $table->integer('reading_time')->nullable()->comment('Reading time in minutes');
             $table->timestamps();
         });
     }

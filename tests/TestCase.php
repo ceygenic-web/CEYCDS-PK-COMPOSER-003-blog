@@ -39,6 +39,32 @@ class TestCase extends OrchestraTestCase
                 'prefix' => '',
             ]);
         }
+
+        // Configure auth guards for testing
+        // Set up a basic guard configuration that works without Sanctum
+        $this->app['config']->set('auth.defaults.guard', 'web');
+        
+        $this->app['config']->set('auth.guards.web', [
+            'driver' => 'session',
+            'provider' => 'users',
+        ]);
+
+        // Configure Sanctum guard if not already set
+        if (!config('auth.guards.sanctum')) {
+            $this->app['config']->set('auth.guards.sanctum', [
+                'driver' => 'token',
+                'provider' => 'users',
+                'hash' => false,
+            ]);
+        }
+
+        $this->app['config']->set('auth.providers.users', [
+            'driver' => 'eloquent',
+            'model' => \Illuminate\Foundation\Auth\User::class,
+        ]);
+
+        // Set up API routes for testing
+        $this->app['router']->getRoutes()->refreshNameLookups();
     }
 }
 

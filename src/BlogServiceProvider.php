@@ -44,6 +44,9 @@ class BlogServiceProvider extends ServiceProvider
         // Load migrations automatically
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
 
+        // Load API routes
+        $this->loadRoutesFrom(__DIR__ . '/../routes/api.php');
+
         // Register commands
         if ($this->app->runningInConsole()) {
             $this->commands([
