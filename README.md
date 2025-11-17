@@ -19,7 +19,7 @@ A comprehensive Laravel package for managing blog posts, categories, tags, and a
 ##  Requirements
 
 - **PHP** >= 8.2
-- **Laravel** >= 10.0 or >= 11.0
+- **Laravel** >= 10.0, >= 11.0, or >= 12.0
 - **Composer**
 - **Database** (MySQL, PostgreSQL, SQLite, etc.)
 - **Laravel Sanctum** (for admin API authentication)
@@ -498,6 +498,6 @@ composer require spatie/laravel-query-builder
 
 ##  Additional Documentation
 
-- **[Developer Guide](DEVELOPER_GUIDE.md)** - In-depth guide for installing, configuring, and extending the package
-- **[Version 2 Developer Guide](V2_DEVELOPER_GUIDE.md)** - Architecture documentation for developers building Version 2
+- **[Developer Guide](https://ceygenic-web.github.io/CEYCDS-PK-package-collection/docs/packages/composer-packages/CEYCDS-PK-COMPOSER-003-blog/developer-guide)** - In-depth guide for installing, configuring, and extending the package
+- **[Version 2 Developer Guide](https://ceygenic-web.github.io/CEYCDS-PK-package-collection/docs/packages/composer-packages/CEYCDS-PK-COMPOSER-003-blog/v2-guide)** - Architecture documentation for developers building Version 2
 
