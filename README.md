@@ -324,86 +324,9 @@ Authorization: Bearer {your-token}
 
 ---
 
-##  Example API Usage
 
-### Create a Post (Admin)
 
-```bash
-curl -X POST http://localhost:8000/api/blog/admin/posts \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "title": "Getting Started with Laravel",
-    "slug": "getting-started-with-laravel",
-    "content": "Laravel is a powerful PHP framework...",
-    "excerpt": "Learn the basics of Laravel",
-    "category_id": 1,
-    "status": "published",
-    "published_at": "2024-01-01T00:00:00Z",
-    "tags": [1, 2]
-  }'
-```
 
-### List Published Posts (Public)
-
-```bash
-curl "http://localhost:8000/api/blog/posts?filter[status]=published&sort=-published_at"
-```
-
-### Search Posts (Public)
-
-```bash
-curl "http://localhost:8000/api/blog/posts/search?q=Laravel"
-```
-
-### Create a Category (Admin)
-
-```bash
-curl -X POST http://localhost:8000/api/blog/admin/categories \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Technology",
-    "slug": "technology",
-    "description": "Tech-related posts"
-  }'
-```
-
-### Get Authentication Token
-
-Create a login endpoint in your application:
-
-```php
-// routes/api.php
-Route::post('/login', function (Request $request) {
-    $request->validate([
-        'email' => 'required|email',
-        'password' => 'required',
-    ]);
-
-    if (!Auth::attempt($request->only('email', 'password'))) {
-        return response()->json(['message' => 'Invalid credentials'], 401);
-    }
-
-    $user = Auth::user();
-    $token = $user->createToken('blog-admin')->plainTextToken;
-
-    return response()->json([
-        'token' => $token,
-        'user' => $user,
-    ]);
-});
-```
-
-Then login to get a token:
-
-```bash
-curl -X POST http://localhost:8000/api/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"password"}'
-```
-
----
 
 ##  Storage Drivers
 
@@ -441,58 +364,6 @@ php artisan blog:verify-dual-storage
 ```
 
 This command verifies that data is synchronized between database and Sanity (if both are configured).
-
----
-
-##  Troubleshooting
-
-### Routes not found (404 errors)
-
-1. Clear route cache: `php artisan route:clear`
-2. Clear config cache: `php artisan config:clear`
-3. Verify package is discovered: `php artisan package:discover`
-4. Check routes: `php artisan route:list | grep blog`
-
-### Authentication errors on admin endpoints
-
-1. Ensure Sanctum is installed and configured
-2. Verify you're sending the token: `Authorization: Bearer {token}`
-3. Check that the token is valid and not expired
-4. Verify the user exists in your database
-
-### QueryBuilder errors
-
-```bash
-composer require spatie/laravel-query-builder
-```
-
-### Migration errors
-
-1. Check if tables already exist: `php artisan migrate:status`
-2. Ensure your database connection is configured correctly in `.env`
-3. Verify database credentials are correct
-4. Check if you need to use a different database connection (see [Database Connection Configuration](#step-4-configure-database-connection))
-
-### Package not auto-discovered
-
-1. Run: `php artisan package:discover`
-2. Check `composer.json` has the package in `require` section
-3. Run: `composer dump-autoload`
-
----
-
-##  Installation Checklist
-
-- [ ] Package installed via Composer
-- [ ] Configuration file published (`php artisan vendor:publish --tag=blog-config`)
-- [ ] Environment variables added to `.env`
-- [ ] Database migrations run (`php artisan migrate`)
-- [ ] Laravel Sanctum installed and configured (for admin API)
-- [ ] `spatie/laravel-query-builder` installed
-- [ ] Routes verified (`php artisan route:list | grep blog`)
-- [ ] Tested public endpoint (e.g., `GET /api/blog/posts`)
-- [ ] Created test user and token for admin API
-- [ ] Tested admin endpoint with authentication
 
 ---
 
