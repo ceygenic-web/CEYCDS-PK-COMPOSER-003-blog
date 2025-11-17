@@ -450,10 +450,7 @@ composer require spatie/laravel-query-builder
 
 ## 📚 Additional Documentation
 
-- **[API Documentation](API_DOCUMENTATION.md)** - Detailed API reference
-- **[Installation Guide](INSTALLATION_GUIDE.md)** - Comprehensive installation steps
-- **[How to Test API](HOW_TO_TEST_API.md)** - Testing instructions
-- **[Post Management](POST_MANAGEMENT_STEPS.md)** - Post management workflows
+- **[Developer Guide](DEVELOPER_GUIDE.md)** - In-depth guide for installing, configuring, and extending the package
 
 ---
 
