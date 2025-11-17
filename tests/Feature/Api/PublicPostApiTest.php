@@ -154,5 +154,150 @@ class PublicPostApiTest extends TestCase
                 'errors',
             ]);
     }
+
+    public function test_can_filter_posts_by_category(): void
+    {
+        $category1 = Blog::categories()->create(['name' => 'Tech']);
+        $category2 = Blog::categories()->create(['name' => 'Science']);
+
+        Blog::posts()->create([
+            'title' => 'Tech Post',
+            'content' => 'Content',
+            'category_id' => $category1->id,
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+
+        Blog::posts()->create([
+            'title' => 'Science Post',
+            'content' => 'Content',
+            'category_id' => $category2->id,
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+
+        $response = $this->getJson("/api/blog/posts?category_id={$category1->id}");
+
+        $response->assertStatus(200);
+        $data = $response->json('data');
+        $this->assertCount(1, $data);
+        $this->assertEquals('Tech Post', $data[0]['attributes']['title']);
+    }
+
+    public function test_can_filter_posts_by_tag(): void
+    {
+        $tag = Blog::tags()->create(['name' => 'laravel']);
+
+        $post = Blog::posts()->create([
+            'title' => 'Laravel Post',
+            'content' => 'Content',
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+        $post->tags()->attach($tag->id);
+
+        Blog::posts()->create([
+            'title' => 'Other Post',
+            'content' => 'Content',
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+
+        $response = $this->getJson("/api/blog/posts?tag_id={$tag->id}");
+
+        $response->assertStatus(200);
+        $data = $response->json('data');
+        $this->assertCount(1, $data);
+        $this->assertEquals('Laravel Post', $data[0]['attributes']['title']);
+    }
+
+    public function test_can_filter_posts_by_author(): void
+    {
+        if (!class_exists('App\\Models\\User')) {
+            eval('
+                namespace App\Models;
+                use Illuminate\Foundation\Auth\User as Authenticatable;
+                
+                class User extends Authenticatable {
+                    protected $fillable = ["name", "email", "password"];
+                }
+            ');
+        }
+
+        /** @phpstan-ignore-next-line */
+        $author = \App\Models\User::create(['name' => 'John Doe', 'email' => 'john@test.com']);
+
+        Blog::posts()->create([
+            'title' => 'Author Post',
+            'content' => 'Content',
+            'author_id' => $author->id,
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+
+        Blog::posts()->create([
+            'title' => 'Other Post',
+            'content' => 'Content',
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+
+        $response = $this->getJson("/api/blog/posts?author_id={$author->id}");
+
+        $response->assertStatus(200);
+        $data = $response->json('data');
+        $this->assertCount(1, $data);
+        $this->assertEquals('Author Post', $data[0]['attributes']['title']);
+    }
+
+    public function test_can_filter_posts_by_date_range(): void
+    {
+        Blog::posts()->create([
+            'title' => 'Old Post',
+            'content' => 'Content',
+            'status' => 'published',
+            'published_at' => now()->subMonths(2),
+        ]);
+
+        Blog::posts()->create([
+            'title' => 'Recent Post',
+            'content' => 'Content',
+            'status' => 'published',
+            'published_at' => now()->subWeek(),
+        ]);
+
+        $startDate = now()->subMonth()->toDateString();
+        $response = $this->getJson("/api/blog/posts?start_date={$startDate}");
+
+        $response->assertStatus(200);
+        $data = $response->json('data');
+        $this->assertCount(1, $data);
+        $this->assertEquals('Recent Post', $data[0]['attributes']['title']);
+    }
+
+    public function test_search_returns_relevance_sorted_results(): void
+    {
+        Blog::posts()->create([
+            'title' => 'PHP Tutorial',
+            'content' => 'Learn PHP',
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+
+        Blog::posts()->create([
+            'title' => 'JavaScript Guide',
+            'content' => 'This is about PHP programming',
+            'status' => 'published',
+            'published_at' => now(),
+        ]);
+
+        $response = $this->getJson('/api/blog/posts/search?q=PHP');
+
+        $response->assertStatus(200);
+        $data = $response->json('data');
+        $this->assertCount(2, $data);
+        // First result should have PHP in title (higher relevance)
+        $this->assertEquals('PHP Tutorial', $data[0]['attributes']['title']);
+    }
 }
 

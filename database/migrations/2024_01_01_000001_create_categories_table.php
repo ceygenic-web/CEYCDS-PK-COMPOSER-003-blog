@@ -15,6 +15,9 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->integer('order')->default(0)->comment('Order control for sorting categories');
             $table->timestamps();
+
+            // Performance indexes
+            $table->index('order'); 
         });
     }
 

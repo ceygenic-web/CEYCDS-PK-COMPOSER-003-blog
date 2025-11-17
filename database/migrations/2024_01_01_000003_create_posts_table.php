@@ -21,6 +21,13 @@ return new class extends Migration
             $table->timestamp('published_at')->nullable();
             $table->integer('reading_time')->nullable()->comment('Reading time in minutes');
             $table->timestamps();
+
+            // Performance indexes
+            $table->index('status');
+            $table->index('published_at');
+            $table->index('category_id');
+            $table->index('author_id');
+            $table->index(['status', 'published_at']); 
         });
     }
 

@@ -14,6 +14,9 @@ return new class extends Migration
             $table->string('slug')->nullable()->unique();
             $table->text('description')->nullable();
             $table->timestamps();
+
+            // Performance indexes
+            $table->index('name');
         });
     }
 

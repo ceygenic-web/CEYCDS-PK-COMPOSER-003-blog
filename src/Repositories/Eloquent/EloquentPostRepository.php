@@ -4,11 +4,13 @@ namespace Ceygenic\Blog\Repositories\Eloquent;
 
 use Ceygenic\Blog\Contracts\Repositories\PostRepositoryInterface;
 use Ceygenic\Blog\Models\Post;
+use Ceygenic\Blog\Traits\HasCache;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
 class EloquentPostRepository implements PostRepositoryInterface
 {
+    use HasCache;
     public function all(): Collection
     {
         return Post::with(['category', 'tags', 'author'])->get();
@@ -21,12 +23,16 @@ class EloquentPostRepository implements PostRepositoryInterface
 
     public function find(int $id)
     {
-        return Post::with(['category', 'tags', 'author'])->find($id);
+        return $this->remember("posts:{$id}", function () use ($id) {
+            return Post::with(['category', 'tags', 'author'])->find($id);
+        }, 'posts');
     }
 
     public function findBySlug(string $slug)
     {
-        return Post::with(['category', 'tags', 'author'])->where('slug', $slug)->first();
+        return $this->remember("posts:slug:{$slug}", function () use ($slug) {
+            return Post::with(['category', 'tags', 'author'])->where('slug', $slug)->first();
+        }, 'posts');
     }
 
     public function create(array $data)
@@ -36,6 +42,9 @@ class EloquentPostRepository implements PostRepositoryInterface
         if (isset($data['tags']) && is_array($data['tags'])) {
             $post->tags()->sync($data['tags']);
         }
+
+        // Clear cache when new post is created
+        $this->clearPostCache();
 
         return $post->load(['category', 'tags', 'author']);
     }
@@ -49,27 +58,58 @@ class EloquentPostRepository implements PostRepositoryInterface
             unset($data['tags']);
         }
 
-        return $post->update($data);
+        $result = $post->update($data);
+
+        // Clear cache when post is updated
+        if ($result) {
+            $this->clearPostCache();
+            $this->forgetCache("posts:{$id}");
+            $this->forgetCache("posts:slug:{$post->slug}");
+        }
+
+        return $result;
     }
 
     public function delete(int $id): bool
     {
         $post = Post::findOrFail($id);
-        return $post->delete();
+        $slug = $post->slug;
+        $result = $post->delete();
+
+        // Clear cache when post is deleted
+        if ($result) {
+            $this->clearPostCache();
+            $this->forgetCache("posts:{$id}");
+            $this->forgetCache("posts:slug:{$slug}");
+        }
+
+        return $result;
+    }
+
+    //Clear all post-related cache.
+    protected function clearPostCache(): void
+    {
+        $this->forgetCache('posts:published');
+        $this->forgetCache('posts:all');
+        $this->clearCacheByPattern('posts:*');
     }
 
     public function getPublished(): Collection
     {
-        return Post::with(['category', 'tags', 'author'])
-            ->where('status', 'published')
-            ->whereNotNull('published_at')
-            ->where('published_at', '<=', now())
-            ->orderBy('published_at', 'desc')
-            ->get();
+        return $this->remember('posts:published', function () {
+            return Post::with(['category', 'tags', 'author'])
+                ->where('status', 'published')
+                ->whereNotNull('published_at')
+                ->where('published_at', '<=', now())
+                ->orderBy('published_at', 'desc')
+                ->get();
+        }, 'posts');
     }
 
     public function getPublishedPaginated(int $perPage = 15): LengthAwarePaginator
     {
+        // Pagination can't be cached easily, so we skip caching for paginated results
+        // The underlying query still benefits from eager loading
         return Post::with(['category', 'tags', 'author'])
             ->where('status', 'published')
             ->whereNotNull('published_at')
@@ -165,6 +205,73 @@ class EloquentPostRepository implements PostRepositoryInterface
             ->where('status', 'archived')
             ->orderBy('updated_at', 'desc')
             ->get();
+    }
+
+    public function search(string $query, int $perPage = 15): LengthAwarePaginator
+    {
+        if (empty(trim($query))) {
+            return $this->getPublishedPaginated($perPage);
+        }
+
+        $searchTerm = trim($query);
+        $connection = \Illuminate\Support\Facades\DB::connection();
+        $driver = $connection->getDriverName();
+
+        $baseQuery = Post::with(['category', 'tags', 'author'])
+            ->where('status', 'published')
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
+
+        // Use full-text search for MySQL/MariaDB if available, otherwise use LIKE
+        if (in_array($driver, ['mysql', 'mariadb'])) {
+            // Check if fulltext index exists (we'll use LIKE as fallback for compatibility)
+            // For better performance, users should add fulltext indexes manually
+            $baseQuery->where(function ($q) use ($searchTerm) {
+                $q->where('title', 'like', "%{$searchTerm}%")
+                  ->orWhere('content', 'like', "%{$searchTerm}%")
+                  ->orWhere('excerpt', 'like', "%{$searchTerm}%");
+            });
+
+            // Calculate relevance score: title matches get higher weight
+            $searchPattern = "%{$searchTerm}%";
+            $baseQuery->selectRaw('posts.*, 
+                (
+                    CASE 
+                        WHEN title LIKE ? THEN 3
+                        WHEN content LIKE ? THEN 1
+                        WHEN excerpt LIKE ? THEN 1
+                        ELSE 0
+                    END
+                ) as relevance', 
+                [$searchPattern, $searchPattern, $searchPattern]
+            );
+        } else {
+            // For PostgreSQL, SQLite, etc., use LIKE with relevance calculation
+            $baseQuery->where(function ($q) use ($searchTerm) {
+                $q->where('title', 'like', "%{$searchTerm}%")
+                  ->orWhere('content', 'like', "%{$searchTerm}%")
+                  ->orWhere('excerpt', 'like', "%{$searchTerm}%");
+            });
+
+            // Calculate relevance score
+            $searchPattern = "%{$searchTerm}%";
+            $baseQuery->selectRaw('posts.*, 
+                (
+                    CASE 
+                        WHEN title LIKE ? THEN 3
+                        WHEN content LIKE ? THEN 1
+                        WHEN excerpt LIKE ? THEN 1
+                        ELSE 0
+                    END
+                ) as relevance',
+                [$searchPattern, $searchPattern, $searchPattern]
+            );
+        }
+
+        return $baseQuery
+            ->orderBy('relevance', 'desc')
+            ->orderBy('published_at', 'desc')
+            ->paginate($perPage);
     }
 }
 

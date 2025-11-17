@@ -176,5 +176,61 @@ class Post extends Model
 
         return $newPost->load(['category', 'tags', 'author']);
     }
+
+    // Filter by category
+    public function scopeByCategory($query, int $categoryId)
+    {
+        return $query->where('category_id', $categoryId);
+    }
+
+    // Filter by tag
+    public function scopeByTag($query, int $tagId)
+    {
+        return $query->whereHas('tags', function ($q) use ($tagId) {
+            $q->where('tags.id', $tagId);
+        });
+    }
+
+    // Filter by tags (multiple)
+    public function scopeByTags($query, array $tagIds)
+    {
+        return $query->whereHas('tags', function ($q) use ($tagIds) {
+            $q->whereIn('tags.id', $tagIds);
+        });
+    }
+
+    // Filter by author
+    public function scopeByAuthor($query, int $authorId)
+    {
+        return $query->where('author_id', $authorId);
+    }
+
+    // Filter by date range
+    public function scopeByDateRange($query, ?string $startDate = null, ?string $endDate = null)
+    {
+        if ($startDate) {
+            $query->where('published_at', '>=', $startDate);
+        }
+        
+        if ($endDate) {
+            $query->where('published_at', '<=', $endDate);
+        }
+        
+        return $query;
+    }
+
+    // Filter by status
+    public function scopeByStatus($query, string $status)
+    {
+        return $query->where('status', $status);
+    }
+
+    // Filter published posts only
+    public function scopePublished($query)
+    {
+        return $query->where('status', 'published')
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
+    }
 }
 

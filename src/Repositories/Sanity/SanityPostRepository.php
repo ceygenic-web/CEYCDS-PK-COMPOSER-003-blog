@@ -212,5 +212,28 @@ class SanityPostRepository implements PostRepositoryInterface
         
         return new Collection(array_map([$this, 'transformSanityPost'], $results));
     }
+
+    public function search(string $query, int $perPage = 15): LengthAwarePaginator
+    {
+        // Sanity GROQ query for full-text search
+        // Note: This is a basic implementation. For production, you may want to use Sanity's text search features
+        $searchTerm = addslashes($query);
+        $groqQuery = "*[_type == 'post' && (title match '*{$searchTerm}*' || content match '*{$searchTerm}*' || excerpt match '*{$searchTerm}*') && status == 'published' && publishedAt <= now()]{_id, title, slug, excerpt, content, featuredImage, category, tags, status, publishedAt} | order(publishedAt desc)";
+        
+        $results = $this->query($groqQuery);
+        $posts = new Collection(array_map([$this, 'transformSanityPost'], $results));
+        
+        // Manual pagination (Sanity doesn't provide built-in pagination in this context)
+        $currentPage = request()->get('page', 1);
+        $items = $posts->forPage($currentPage, $perPage)->values();
+        
+        return new \Illuminate\Pagination\LengthAwarePaginator(
+            $items,
+            $posts->count(),
+            $perPage,
+            $currentPage,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+    }
 }
 

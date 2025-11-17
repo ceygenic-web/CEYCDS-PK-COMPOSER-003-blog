@@ -42,6 +42,8 @@ class BlogServiceProvider extends ServiceProvider
         ], 'blog-migrations');
 
         // Load migrations automatically
+        // Note: The users table migration checks if table exists before creating
+        // This prevents conflicts with host app's existing users table
         $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
 
         // Load API routes

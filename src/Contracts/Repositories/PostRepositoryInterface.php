@@ -66,5 +66,8 @@ interface PostRepositoryInterface
 
     // Get all archived posts.
     public function getArchived(): Collection;
+
+    // Search posts by query string (full-text search on title and content).
+    public function search(string $query, int $perPage = 15): LengthAwarePaginator;
 }
 

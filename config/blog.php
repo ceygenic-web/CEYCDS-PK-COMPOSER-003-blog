@@ -59,6 +59,34 @@ return [
             'video/webm',
         ],
     ],
+
+    // Performance Configuration - Configuration for caching and query optimization.
+    'cache' => [
+        // Enable/disable caching
+        'enabled' => env('BLOG_CACHE_ENABLED', true),
+        
+        // Cache TTL in seconds
+        'ttl' => env('BLOG_CACHE_TTL', 3600), 
+        
+        // Cache prefix for all blog cache keys
+        'prefix' => env('BLOG_CACHE_PREFIX', 'blog'),
+        
+        // Cache specific queries
+        'queries' => [
+            'posts' => [
+                'enabled' => env('BLOG_CACHE_POSTS', true),
+                'ttl' => env('BLOG_CACHE_POSTS_TTL', 3600),
+            ],
+            'categories' => [
+                'enabled' => env('BLOG_CACHE_CATEGORIES', true),
+                'ttl' => env('BLOG_CACHE_CATEGORIES_TTL', 7200), 
+            ],
+            'tags' => [
+                'enabled' => env('BLOG_CACHE_TAGS', true),
+                'ttl' => env('BLOG_CACHE_TAGS_TTL', 7200),
+            ],
+        ],
+    ],
 ];
 
 
