@@ -2,21 +2,21 @@
 
 A comprehensive Laravel package for managing blog posts, categories, tags, and authors. This package provides a complete RESTful API with public and admin endpoints, supporting both database and Sanity CMS storage drivers.
 
-## 📋 Features
+##  Features
 
-- ✅ Complete RESTful API (JSON:API compliant)
-- ✅ Public and Admin endpoints
-- ✅ Support for multiple storage drivers (Database & Sanity CMS)
-- ✅ Advanced filtering, sorting, and pagination
-- ✅ Automatic reading time calculation
-- ✅ Slug generation for posts, categories, and tags
-- ✅ Post status management (draft, published, archived)
-- ✅ Post scheduling and archiving
-- ✅ Media upload support
-- ✅ Rate limiting
-- ✅ Laravel Sanctum authentication for admin endpoints
+-  Complete RESTful API (JSON:API compliant)
+-  Public and Admin endpoints
+-  Support for multiple storage drivers (Database & Sanity CMS)
+-  Advanced filtering, sorting, and pagination
+-  Automatic reading time calculation
+-  Slug generation for posts, categories, and tags
+-  Post status management (draft, published, archived)
+-  Post scheduling and archiving
+-  Media upload support
+-  Rate limiting
+-  Laravel Sanctum authentication for admin endpoints
 
-## 📋 Requirements
+##  Requirements
 
 - **PHP** >= 8.2
 - **Laravel** >= 10.0 or >= 11.0
@@ -26,7 +26,7 @@ A comprehensive Laravel package for managing blog posts, categories, tags, and a
 
 ---
 
-## 🚀 Installation & Setup
+##  Installation & Setup
 
 ### Step 1: Install the Package
 
@@ -175,7 +175,7 @@ You should receive a JSON response.
 
 ---
 
-## 📖 Usage
+##  Usage
 
 ### Using the Facade
 
@@ -236,7 +236,7 @@ $posts = $blog->posts()->all();
 
 ---
 
-## 🌐 API Endpoints
+##  API Endpoints
 
 ### Base URL
 
@@ -324,7 +324,7 @@ Authorization: Bearer {your-token}
 
 ---
 
-## 📝 Example API Usage
+##  Example API Usage
 
 ### Create a Post (Admin)
 
@@ -405,7 +405,7 @@ curl -X POST http://localhost:8000/api/login \
 
 ---
 
-## 🔄 Storage Drivers
+##  Storage Drivers
 
 The package supports two storage drivers:
 
@@ -432,7 +432,7 @@ SANITY_TOKEN=your-sanity-token
 
 ---
 
-## 🛠️ Artisan Commands
+##  Artisan Commands
 
 The package includes an Artisan command for verifying dual storage:
 
@@ -444,7 +444,7 @@ This command verifies that data is synchronized between database and Sanity (if 
 
 ---
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### Routes not found (404 errors)
 
@@ -481,7 +481,7 @@ composer require spatie/laravel-query-builder
 
 ---
 
-## ✅ Installation Checklist
+##  Installation Checklist
 
 - [ ] Package installed via Composer
 - [ ] Configuration file published (`php artisan vendor:publish --tag=blog-config`)
@@ -496,25 +496,8 @@ composer require spatie/laravel-query-builder
 
 ---
 
-## 📚 Additional Documentation
+##  Additional Documentation
 
 - **[Developer Guide](DEVELOPER_GUIDE.md)** - In-depth guide for installing, configuring, and extending the package
 - **[Version 2 Developer Guide](V2_DEVELOPER_GUIDE.md)** - Architecture documentation for developers building Version 2
 
----
-
-## 📄 License
-
-This package is open-sourced software licensed under the [MIT license](LICENSE).
-
----
-
-## 👥 Support
-
-For issues, questions, or contributions, please refer to the project repository.
-
----
-
-## 🎉 You're All Set!
-
-Your blog package is now installed and ready to use. Start creating posts, categories, and tags through the API or using the Facade in your code.
