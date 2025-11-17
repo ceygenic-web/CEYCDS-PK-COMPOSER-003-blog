@@ -77,7 +77,40 @@ SANITY_TOKEN=your-sanity-token
 | `SANITY_DATASET` | Sanity dataset name | `production` | Yes (if using Sanity) |
 | `SANITY_TOKEN` | Sanity API token | - | Yes (if using Sanity) |
 
-### Step 4: Run Database Migrations
+### Step 4: Configure Database Connection
+
+The package uses Laravel's default database connection. Ensure your `.env` file has the correct database configuration:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=your_database
+DB_USERNAME=your_username
+DB_PASSWORD=your_password
+```
+
+**Using a Different Database Connection:**
+
+If you want to store blog data in a separate database, you can configure a custom connection in `config/database.php`:
+
+```php
+'connections' => [
+    'blog' => [
+        'driver' => 'mysql',
+        'host' => env('BLOG_DB_HOST', '127.0.0.1'),
+        'port' => env('BLOG_DB_PORT', '3306'),
+        'database' => env('BLOG_DB_DATABASE', 'blog_db'),
+        'username' => env('BLOG_DB_USERNAME', 'root'),
+        'password' => env('BLOG_DB_PASSWORD', ''),
+        // ... other connection settings
+    ],
+],
+```
+
+Then set the connection in your models or via config. See the [Developer Guide](DEVELOPER_GUIDE.md#database-connection-configuration) for details.
+
+### Step 5: Run Database Migrations
 
 Run the migrations to create the required database tables:
 
@@ -90,20 +123,33 @@ php artisan migrate
 - `tags` - Blog tags
 - `posts` - Blog posts
 - `post_tag` - Pivot table for post-tag relationships
+- `author_profiles` - Author profile information
+- `media` - Media library files
 
 **Note:** If using the Sanity driver (`BLOG_DRIVER=sanity`), you don't need to run migrations as data is stored in Sanity CMS.
 
-### Step 5: Install Laravel Sanctum (For Admin API)
+### Step 6: Install Laravel Sanctum (For Admin API)
 
 The admin API endpoints require Laravel Sanctum authentication. If you haven't installed it:
 
-   ```bash
+```bash
 composer require laravel/sanctum
 php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
 php artisan migrate
-   ```
+```
 
-### Step 6: Install Required Dependencies
+### Step 6.5: Create Cache Table (For Rate Limiting)
+
+The API routes use rate limiting which requires a cache table when using the database cache driver. Create it:
+
+```bash
+php artisan cache:table
+php artisan migrate
+```
+
+**Note:** If you're using `CACHE_DRIVER=array` in your `.env` for development, you can skip this step. However, for production, it's recommended to use the database cache driver with the cache table.
+
+### Step 7: Install Required Dependencies
 
 The package requires `spatie/laravel-query-builder` for filtering and sorting. It should be installed automatically, but if not:
 
@@ -111,7 +157,7 @@ The package requires `spatie/laravel-query-builder` for filtering and sorting. I
 composer require spatie/laravel-query-builder
 ```
 
-### Step 7: Verify Installation
+### Step 8: Verify Installation
 
 Check if routes are registered:
 
@@ -424,6 +470,8 @@ composer require spatie/laravel-query-builder
 
 1. Check if tables already exist: `php artisan migrate:status`
 2. Ensure your database connection is configured correctly in `.env`
+3. Verify database credentials are correct
+4. Check if you need to use a different database connection (see [Database Connection Configuration](#step-4-configure-database-connection))
 
 ### Package not auto-discovered
 
@@ -451,6 +499,7 @@ composer require spatie/laravel-query-builder
 ## 📚 Additional Documentation
 
 - **[Developer Guide](DEVELOPER_GUIDE.md)** - In-depth guide for installing, configuring, and extending the package
+- **[Version 2 Developer Guide](V2_DEVELOPER_GUIDE.md)** - Architecture documentation for developers building Version 2
 
 ---
 

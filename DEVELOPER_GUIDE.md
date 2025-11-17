@@ -81,7 +81,65 @@ php artisan migrate
 
 ---
 
-### 3. Basic Configuration (DB Driver)
+### 3. Database Connection Configuration
+
+#### 3.1. Default Connection
+
+By default, the package uses Laravel's default database connection (configured via `DB_CONNECTION` in your `.env`). All blog models will use this connection.
+
+#### 3.2. Using a Separate Database Connection
+
+If you want to store blog data in a separate database, you can:
+
+**Option 1: Configure a custom connection in `config/database.php`:**
+
+```php
+'connections' => [
+    'blog' => [
+        'driver' => 'mysql',
+        'host' => env('BLOG_DB_HOST', '127.0.0.1'),
+        'port' => env('BLOG_DB_PORT', '3306'),
+        'database' => env('BLOG_DB_DATABASE', 'blog_db'),
+        'username' => env('BLOG_DB_USERNAME', 'root'),
+        'password' => env('BLOG_DB_PASSWORD', ''),
+        'charset' => 'utf8mb4',
+        'collation' => 'utf8mb4_unicode_ci',
+        'prefix' => '',
+        'strict' => true,
+        'engine' => null,
+    ],
+],
+```
+
+**Option 2: Override models to use a different connection:**
+
+Create extended models in your app and set the `$connection` property:
+
+```php
+namespace App\Models;
+
+use Ceygenic\Blog\Models\Post as BasePost;
+
+class Post extends BasePost
+{
+    protected $connection = 'blog';
+}
+```
+
+Then override the model in `config/blog.php`:
+
+```php
+'models' => [
+    'post' => \App\Models\Post::class,
+    // ... other models
+],
+```
+
+**Option 3: Set connection via config (if supported in future versions):**
+
+This would require adding connection configuration to `config/blog.php` and updating models accordingly.
+
+#### 3.3. Basic Configuration (DB Driver)
 
 The default driver is `db` (Eloquent). In your `.env`:
 
@@ -143,6 +201,8 @@ This gives you:
 ---
 
 ### 4. Switching Between `db` and `sanity` Drivers
+
+> **Note:** Database connection configuration (see section 3) is separate from the storage driver. The `BLOG_DRIVER` setting determines whether to use Eloquent (`db`) or Sanity CMS (`sanity`) for data access, while database connection settings determine which database server/connection to use when the `db` driver is selected.
 
 The driver is controlled by `config('blog.driver')` or `.env`:
 
@@ -458,11 +518,15 @@ Now the same public endpoints will read from Sanity instead of your local DB (wh
 - `src/Contracts/Repositories/*` — abstraction for data access
 - `src/Repositories/Eloquent/*` — Eloquent implementations
 - `src/Repositories/Sanity/*` — Sanity implementations
-- `src/Models/*` — Eloquent models
+- `src/Models/*` — Eloquent models (check `$connection` property if using custom connections)
 - `src/Http/Controllers/Api/*` — API controllers
 - `src/Http/Resources/*` — JSON:API resources
 - `src/Traits/*` — reusable logic (slugs, reading time, authors, cache)
 - `tests/Feature/*` — best place to see examples of how everything works end-to-end
+
+**Related Documentation:**
+- See [README.md](README.md) for installation and basic setup
+- See [V2_DEVELOPER_GUIDE.md](V2_DEVELOPER_GUIDE.md) for Version 1 architecture details
 
 ---
 

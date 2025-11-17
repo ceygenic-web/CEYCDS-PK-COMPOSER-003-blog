@@ -15,7 +15,21 @@ class AdminMediaApiTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        
+        // Ensure we use 'public' disk for tests
+        $this->app['config']->set('blog.media.disk', 'public');
+        
+        // Fake the public disk
         Storage::fake('public');
+        
+        // Ensure filesystem config doesn't try to use S3
+        $this->app['config']->set('filesystems.disks.public', [
+            'driver' => 'local',
+            'root' => storage_path('app/public'),
+            'url' => env('APP_URL') . '/storage',
+            'visibility' => 'public',
+        ]);
+        
         $this->withoutMiddleware(\Illuminate\Auth\Middleware\Authenticate::class);
     }
 

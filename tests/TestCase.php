@@ -40,6 +40,23 @@ class TestCase extends OrchestraTestCase
             ]);
         }
 
+        // Use array cache driver for tests to avoid needing cache table
+        $this->app['config']->set('cache.default', 'array');
+
+        // Configure filesystem for testing - ensure public disk is available
+        if (!config('filesystems.disks.public')) {
+            $this->app['config']->set('filesystems.disks.public', [
+                'driver' => 'local',
+                'root' => storage_path('app/public'),
+                'url' => env('APP_URL') . '/storage',
+                'visibility' => 'public',
+            ]);
+        }
+
+        // Ensure blog media disk defaults to 'public' for tests
+        // This prevents tests from trying to use S3 when the package isn't installed
+        $this->app['config']->set('blog.media.disk', 'public');
+
         // Configure auth guards for testing
         // Set up a basic guard configuration that works without Sanctum
         $this->app['config']->set('auth.defaults.guard', 'web');
