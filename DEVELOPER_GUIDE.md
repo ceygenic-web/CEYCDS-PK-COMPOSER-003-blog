@@ -75,13 +75,118 @@ php artisan migrate
 
 For detailed installation steps, see the [Installation Guide](INSTALLATION.md).
 
-## 3. Database Connection Configuration
+## 3. Linking to Your User Model
 
-### 3.1. Default Connection
+By default, the Post model needs an author (`author_id`). You can tell the package which User model to use:
+
+```env
+BLOG_USER_MODEL=App\Models\User
+```
+
+In `config/blog.php`:
+
+```php
+'author' => [
+    'user_model' => env('BLOG_USER_MODEL', config('auth.providers.users.model', 'App\\Models\\User')),
+],
+```
+
+This means:
+- `Post::author()` will use your app's User model.
+- `AuthorProfile` references your users table.
+
+If you want blog-specific author helpers (bio, avatar, etc.), add the `BlogAuthor` trait to your User model:
+
+```php
+use Ceygenic\Blog\Traits\BlogAuthor;
+
+class User extends Authenticatable
+{
+    use BlogAuthor;
+}
+```
+
+This gives you:
+- `$user->authorProfile`
+- `$user->blogPosts`
+- `$user->bio`, `$user->avatar`, `$user->social_links`
+
+## 4. Dual Storage System
+
+The package implements a **dual storage system** that allows you to choose between two storage backends for your blog content:
+
+1. **Database Driver (`db`)** - Traditional Laravel Eloquent storage (default)
+2. **Sanity CMS Driver (`sanity`)** - Headless CMS integration for content management
+
+This architecture allows you to switch storage backends without changing your application code, providing flexibility for different deployment scenarios.
+
+### 4.1. Overview
+
+**Key Concept:** The storage driver is separate from database connection configuration.
+
+- **Storage Driver** (`BLOG_DRIVER`) - Determines **how** data is stored and retrieved (Eloquent vs Sanity CMS)
+- **Database Connection** (covered in section 4.3.1) - Determines **which** database server/connection to use when the `db` driver is selected
+
+**How It Works:**
+- The package uses a **Repository Pattern** with interfaces
+- Service Provider binds the appropriate repository implementations based on the configured driver
+- All API endpoints and Facade methods work identically regardless of driver
+- Only the underlying data access layer changes
+
+### 4.2. Configuration
+
+The driver is controlled by `config('blog.driver')` or the `.env` file:
+
+```env
+# Use Eloquent/database (default)
+BLOG_DRIVER=db
+
+# OR use Sanity CMS for read operations
+BLOG_DRIVER=sanity
+```
+
+You can also set it programmatically in `config/blog.php`:
+
+```php
+'driver' => env('BLOG_DRIVER', 'db'),
+```
+
+### 4.3. Database Driver (`db`)
+
+The **database driver** uses Laravel Eloquent ORM to store and retrieve blog data from your database.
+
+#### Features
+
+-  **Full CRUD Support** - Create, read, update, and delete operations
+-  **All Post Management Features** - Publish, unpublish, schedule, duplicate, archive, restore
+-  **Advanced Querying** - Complex filters, sorting, pagination
+-  **Relationships** - Full Eloquent relationships between posts, categories, tags, authors
+-  **Transactions** - Database transactions for data integrity
+-  **Migrations** - Automatic migration loading for database schema
+
+#### Models Used
+
+- `Ceygenic\Blog\Models\Post`
+- `Ceygenic\Blog\Models\Category`
+- `Ceygenic\Blog\Models\Tag`
+- `Ceygenic\Blog\Models\AuthorProfile`
+- `Ceygenic\Blog\Models\Media`
+
+#### Repositories
+
+- `EloquentPostRepository` - Handles all post operations
+- `EloquentCategoryRepository` - Manages categories
+- `EloquentTagRepository` - Manages tags
+
+#### Database Connection Configuration
+
+When using the `db` driver, you can configure which database connection to use:
+
+**Default Connection:**
 
 By default, the package uses Laravel's default database connection (configured via `DB_CONNECTION` in your `.env`). All blog models will use this connection.
 
-### 3.2. Using a Separate Database Connection
+**Using a Separate Database Connection:**
 
 If you want to store blog data in a separate database, you can:
 
@@ -129,13 +234,9 @@ Then override the model in `config/blog.php`:
 ],
 ```
 
-**Option 3:** Set connection via config (if supported in future versions):
+#### Basic Configuration
 
-This would require adding connection configuration to `config/blog.php` and updating models accordingly.
-
-### 3.3. Basic Configuration (DB Driver)
-
-The default driver is `db` (Eloquent). In your `.env`:
+When using the `db` driver, configure in your `.env`:
 
 ```env
 BLOG_ENABLED=true
@@ -155,72 +256,28 @@ BLOG_CACHE_TTL=3600
 BLOG_CACHE_PREFIX=blog
 ```
 
-### 3.4. Linking to Your User Model
+#### Use Cases
 
-By default, the Post model needs an author (`author_id`). You can tell the package which User model to use:
+- Standard Laravel applications with MySQL/PostgreSQL/SQLite
+- Full control over database schema and queries
+- Production deployments requiring full CRUD capabilities
+- Applications needing advanced querying and relationships
 
-```env
-BLOG_USER_MODEL=App\Models\User
-```
 
-In `config/blog.php`:
 
-```php
-'author' => [
-    'user_model' => env('BLOG_USER_MODEL', config('auth.providers.users.model', 'App\\Models\\User')),
-],
-```
+### 4.4. Sanity CMS Driver (`sanity`)
 
-This means:
-- `Post::author()` will use your app's User model.
-- `AuthorProfile` references your users table.
+The **Sanity driver** integrates with Sanity CMS as a headless content management system.
 
-If you want blog-specific author helpers (bio, avatar, etc.), add the `BlogAuthor` trait to your User model:
+#### Features
 
-```php
-use Ceygenic\Blog\Traits\BlogAuthor;
+-  **Read Operations** - Fetch posts, categories, tags from Sanity via GROQ queries
+-  **Content Management** - Content managed through Sanity Studio
+-  **Write Operations** - Limited (most create/update/delete operations are stubbed)
 
-class User extends Authenticatable
-{
-    use BlogAuthor;
-}
-```
+#### Configuration
 
-This gives you:
-- `$user->authorProfile`
-- `$user->blogPosts`
-- `$user->bio`, `$user->avatar`, `$user->social_links`
-
-## 4. Switching Between db and sanity Drivers
-
-**Note:** Database connection configuration (see section 3) is separate from the storage driver. The `BLOG_DRIVER` setting determines whether to use Eloquent (`db`) or Sanity CMS (`sanity`) for data access, while database connection settings determine which database server/connection to use when the `db` driver is selected.
-
-The driver is controlled by `config('blog.driver')` or `.env`:
-
-```env
-# Use Eloquent/database
-BLOG_DRIVER=db
-
-# OR use Sanity CMS for read operations
-BLOG_DRIVER=sanity
-```
-
-### 4.1. DB Driver (db)
-
-Uses Eloquent models:
-- `Ceygenic\Blog\Models\Post`
-- `Category`, `Tag`, `AuthorProfile`, `Media`
-
-All CRUD operations & advanced features work.
-
-Repositories:
-- `EloquentPostRepository`
-- `EloquentCategoryRepository`
-- `EloquentTagRepository`
-
-### 4.2. Sanity Driver (sanity)
-
-Configure in `.env`:
+Set in `.env`:
 
 ```env
 BLOG_DRIVER=sanity
@@ -229,17 +286,162 @@ SANITY_DATASET=production
 SANITY_TOKEN=your-sanity-token
 ```
 
-- Read data from Sanity via GROQ queries.
-- Repositories:
-  - `SanityPostRepository`
-  - `SanityCategoryRepository`
-  - `SanityTagRepository`
+Or in `config/blog.php`:
 
-Most mutating operations (create/update/delete) are stubs and will throw a `RuntimeException` until you implement Sanity mutations.
+```php
+'sanity' => [
+    'project_id' => env('SANITY_PROJECT_ID', ''),
+    'dataset' => env('SANITY_DATASET', 'production'),
+    'token' => env('SANITY_TOKEN', null),
+],
+```
 
-**Typical pattern:**
-- Use `db` driver in production for full CRUD.
-- Use `sanity` driver if your content team already lives in Sanity and you only need read-side blog API.
+#### Repositories
+
+- `SanityPostRepository` - Fetches posts from Sanity using GROQ
+- `SanityCategoryRepository` - Fetches categories from Sanity
+- `SanityTagRepository` - Fetches tags from Sanity
+
+#### Limitations
+
+- **Read-Only for Most Operations** - Create/update/delete operations throw `RuntimeException` until implemented
+- **No Eloquent Relationships** - Relationships must be resolved manually in GROQ queries
+- **Content Management via Sanity Studio** - Content is managed through Sanity's admin interface, not Laravel
+- **Requires Sanity Setup** - You need a Sanity project, schema, and proper GROQ queries configured
+
+#### Use Cases
+
+- Content teams already using Sanity CMS
+- Decoupled architecture where content management is separate from application
+- Read-only blog displays powered by Sanity content
+- Multi-channel content distribution (Sanity content consumed by multiple applications)
+
+
+
+### 4.5. Repository Pattern Architecture
+
+The dual storage system is built on a **repository pattern** with clear interfaces:
+
+#### Interfaces
+
+Located in `src/Contracts/Repositories/`:
+- `PostRepositoryInterface` - Defines contract for post operations
+- `CategoryRepositoryInterface` - Defines contract for category operations
+- `TagRepositoryInterface` - Defines contract for tag operations
+
+#### Implementations
+
+**Eloquent Implementations** (`src/Repositories/Eloquent/`):
+- `EloquentPostRepository`
+- `EloquentCategoryRepository`
+- `EloquentTagRepository`
+
+**Sanity Implementations** (`src/Repositories/Sanity/`):
+- `SanityPostRepository`
+- `SanityCategoryRepository`
+- `SanityTagRepository`
+
+#### Service Provider Binding
+
+The `BlogServiceProvider` automatically binds the correct implementations based on the driver:
+
+```php
+protected function registerRepositories(): void
+{
+    $driver = config('blog.driver', 'db');
+
+    if ($driver === 'sanity') {
+        $this->app->bind(PostRepositoryInterface::class, SanityPostRepository::class);
+        $this->app->bind(CategoryRepositoryInterface::class, SanityCategoryRepository::class);
+        $this->app->bind(TagRepositoryInterface::class, SanityTagRepository::class);
+    } else {
+        $this->app->bind(PostRepositoryInterface::class, EloquentPostRepository::class);
+        $this->app->bind(CategoryRepositoryInterface::class, EloquentCategoryRepository::class);
+        $this->app->bind(TagRepositoryInterface::class, EloquentTagRepository::class);
+    }
+}
+```
+
+### 4.6. Switching Between Drivers
+
+You can switch drivers at any time by changing the `BLOG_DRIVER` environment variable:
+
+```env
+# Switch to database driver
+BLOG_DRIVER=db
+
+# Switch to Sanity driver
+BLOG_DRIVER=sanity
+```
+
+**Important Notes:**
+- The switch happens at **runtime** - no code changes needed
+- Both drivers must have their respective configurations set up
+- When switching from `db` to `sanity`, ensure Sanity project is configured
+- When switching from `sanity` to `db`, ensure database migrations have been run
+
+### 4.7. Driver Selection Guide
+
+#### Choose Database Driver (`db`) When:
+
+- You need full CRUD capabilities
+- Your team prefers managing content through Laravel
+- You want direct database access and querying
+- You're building a traditional Laravel application
+- You need advanced querying, relationships, and transactions
+
+#### Choose Sanity Driver (`sanity`) When:
+
+- Your content team already uses Sanity CMS
+- You want decoupled content management (content managed separately from code)
+- You're building read-only blog displays
+- You need multi-channel content distribution
+- You want non-technical team members to manage content via Sanity Studio
+
+### 4.8. Verifying Dual Storage
+
+The package includes an Artisan command to verify dual storage configuration:
+
+```bash
+php artisan blog:verify-dual-storage
+```
+
+This command:
+- Verifies that both drivers can be configured
+- Checks repository bindings
+- Validates Sanity configuration (if driver is set to `sanity`)
+- Tests database connectivity (if driver is set to `db`)
+
+### 4.9. Extending the Storage System
+
+If you need to add a custom storage driver (e.g., MongoDB, Firebase):
+
+1. **Create Repository Interface Implementation:**
+   ```php
+   namespace App\Repositories\Custom;
+   
+   use Ceygenic\Blog\Contracts\Repositories\PostRepositoryInterface;
+   
+   class CustomPostRepository implements PostRepositoryInterface
+   {
+       // Implement all interface methods
+   }
+   ```
+
+2. **Bind in Service Provider:**
+   ```php
+   public function register()
+   {
+       if (config('blog.driver') === 'custom') {
+           $this->app->bind(PostRepositoryInterface::class, CustomPostRepository::class);
+       }
+   }
+   ```
+
+3. **Update Configuration:**
+   Add your custom driver option to `config/blog.php` and update `BlogServiceProvider` logic.
+
+
 
 ## 5. Using the Facade in Your App
 
@@ -300,196 +502,508 @@ $blog = app('blog');
 $posts = $blog->posts()->all();
 ```
 
-## 6. REST API Overview (How to Call from Your Frontend)
+## 6. RESTful API
 
-Once installed, the package registers API routes under `/api/blog`.
+The package provides a complete RESTful API under `/api/blog`. All endpoints follow JSON:API specification and support filtering, sorting, and pagination.
 
-### 6.1. Public Endpoints (No Auth Required)
+### 6.1. API Response Format
 
-Rate-limited to **120 requests per minute**.
+All API responses follow the **JSON:API** specification format:
 
-#### Posts
-
-- **GET** `/api/blog/posts` - List all posts (with pagination, filtering, sorting)
-- **GET** `/api/blog/posts/{slug}` - Get single post by slug
-- **GET** `/api/blog/posts/search?q={query}` - Search posts
-
-**Query Parameters:**
-- `filter[title]` - Filter by title
-- `filter[status]` - Filter by status (draft, published, archived)
-- `filter[category_id]` - Filter by category ID
-- `sort` - Sort by field (e.g., `-published_at` for descending)
-- `per_page` - Items per page (default: 15)
-- `page` - Page number
-
-**Example:**
-```bash
-GET /api/blog/posts?filter[status]=published&sort=-published_at&per_page=10
+```json
+{
+  "data": {
+    "type": "posts",
+    "id": "1",
+    "attributes": {
+      "title": "My Post Title",
+      "slug": "my-post-title",
+      "content": "Post content here...",
+      "excerpt": "Short excerpt",
+      "status": "published",
+      "published_at": "2024-01-15T10:00:00.000000Z",
+      "reading_time": 5
+    },
+    "relationships": {
+      "category": {
+        "data": {
+          "type": "categories",
+          "id": "1",
+          "attributes": {
+            "name": "Technology",
+            "slug": "technology"
+          }
+        }
+      },
+      "tags": {
+        "data": [
+          {
+            "type": "tags",
+            "id": "1",
+            "attributes": {
+              "name": "Laravel",
+              "slug": "laravel"
+            }
+          }
+        ]
+      },
+      "author": {
+        "data": {
+          "type": "authors",
+          "id": "1",
+          "attributes": {
+            "name": "John Doe",
+            "email": "john@example.com"
+          }
+        }
+      }
+    }
+  },
+  "links": {
+    "self": "http://example.com/api/blog/posts/my-post-title"
+  }
+}
 ```
 
-#### Categories
+### 6.2. Public Endpoints
 
-- **GET** `/api/blog/categories` - List all categories
-- **GET** `/api/blog/categories/{slug}/posts` - Get posts by category
+**Base URL:** `/api/blog`  
+**Rate Limit:** 120 requests/minute  
+**Authentication:** Not required
 
-#### Tags
+**Posts:**
+- `GET /api/blog/posts` - List posts (paginated, filterable, sortable)
+- `GET /api/blog/posts/{slug}` - Get single post by slug
+- `GET /api/blog/posts/search?q={query}` - Search posts
 
-- **GET** `/api/blog/tags` - List all tags
-- **GET** `/api/blog/tags/popular` - Popular tags
-- **GET** `/api/blog/tags/{slug}/posts` - Get posts by tag
+**Categories:**
+- `GET /api/blog/categories` - List categories
+- `GET /api/blog/categories/{slug}/posts` - Posts by category
 
-#### Authors
+**Tags:**
+- `GET /api/blog/tags` - List tags
+- `GET /api/blog/tags/popular?limit=10` - Popular tags
+- `GET /api/blog/tags/{slug}/posts` - Posts by tag
 
-- **GET** `/api/blog/authors/{id}` - Get author with posts
-- **GET** `/api/blog/authors/{id}/posts` - Get posts by author
+**Authors:**
+- `GET /api/blog/authors/{id}` - Get author with profile
+- `GET /api/blog/authors/{id}/posts` - Posts by author
 
-You can consume these from any frontend (Blade, Vue, React, mobile, etc.).
+### 6.3. Admin Endpoints
 
-### 6.2. Admin Endpoints (Protected)
+**Base URL:** `/api/blog/admin`  
+**Rate Limit:** 60 requests/minute  
+**Authentication:** Required (Sanctum token)
 
-Rate-limited to **60 requests per minute**. Requires Sanctum authentication.
+**Header:** `Authorization: Bearer {token}`
 
-**Include token in header:**
+**Posts:**
+- `GET /api/blog/admin/posts` - List all posts
+- `POST /api/blog/admin/posts` - Create post
+- `GET /api/blog/admin/posts/{id}` - Get post
+- `PUT/PATCH /api/blog/admin/posts/{id}` - Update post
+- `DELETE /api/blog/admin/posts/{id}` - Delete post
+- `POST /api/blog/admin/posts/{id}/publish` - Publish
+- `POST /api/blog/admin/posts/{id}/unpublish` - Unpublish
+- `POST /api/blog/admin/posts/{id}/toggle-status` - Toggle status
+- `POST /api/blog/admin/posts/{id}/schedule` - Schedule
+- `POST /api/blog/admin/posts/{id}/duplicate` - Duplicate
+- `POST /api/blog/admin/posts/{id}/archive` - Archive
+- `POST /api/blog/admin/posts/{id}/restore` - Restore
+
+**Categories:**
+- `GET /api/blog/admin/categories` - List
+- `POST /api/blog/admin/categories` - Create
+- `GET /api/blog/admin/categories/{id}` - Get
+- `PUT/PATCH /api/blog/admin/categories/{id}` - Update
+- `DELETE /api/blog/admin/categories/{id}` - Delete
+
+**Media:**
+- `POST /api/blog/admin/media/upload` - Upload (multipart/form-data, max 10MB)
+- `GET /api/blog/admin/media` - List
+- `GET /api/blog/admin/media/{id}` - Get
+- `PUT/PATCH /api/blog/admin/media/{id}` - Update
+
+### 6.4. Query Parameters
+
+**Pagination:**
+- `per_page` - Items per page (default: 15, max: 100)
+- `page` - Page number (default: 1)
+
+**Filtering:**
+- `filter[status]` - draft, published, archived
+- `filter[category_id]` - Filter by category
+- `filter[author_id]` - Filter by author
+- `filter[title]` - Partial match on title
+- `tag_id` - Filter by tag ID
+
+**Sorting:**
+- `sort=field` - Ascending (e.g., `sort=published_at`)
+- `sort=-field` - Descending (e.g., `sort=-published_at`)
+- `sort=field1,field2` - Multiple fields
+
+
+
+## 7. Post Management
+
+The package provides comprehensive post management features including CRUD operations, status management, scheduling, and more.
+
+### 7.1. Post Fields
+
+Each post supports the following fields:
+
+- **`title`** (required) - Post title
+- **`slug`** (optional) - URL-friendly slug (auto-generated from title if not provided)
+- **`content`** (required) - Full post content
+- **`excerpt`** (optional) - Short description or summary
+- **`featured_image`** (optional) - Featured image URL/path
+- **`category_id`** (optional) - Category assignment (single category)
+- **`author_id`** (optional) - Author assignment (single author)
+- **`status`** (optional) - Post status: `draft`, `published`, or `archived` (default: `draft`)
+- **`published_at`** (optional) - Publication date/time (supports scheduling)
+- **`reading_time`** (auto-calculated) - Estimated reading time in minutes
+- **`index`** (optional) - Custom ordering index
+
+### 7.2. Post Status Management
+
+Posts can have three statuses:
+
+#### Draft Status
+- Status: `draft`
+- Not visible to public
+- Can be edited and published later
+
+#### Published Status
+- Status: `published`
+- Visible to public (if `published_at` is in the past)
+- Appears in public API endpoints
+
+#### Archived Status
+- Status: `archived`
+- Hidden from public view
+- Can be restored to draft status
+
+
+### 7.3. Post Actions
+
+**Available:** publish, unpublish, toggle-status, schedule, duplicate, archive, restore
+
+**Via Facade:**
+```php
+Blog::publishPost($id);
+Blog::unpublishPost($id);
+Blog::togglePostStatus($id);
+Blog::schedulePost($id, new \DateTime('2024-12-25 10:00:00'));
+Blog::duplicatePost($id, 'New Title');
+Blog::archivePost($id);
+Blog::restorePost($id);
 ```
-Authorization: Bearer {your-token}
+
+**Via API:** `POST /api/blog/admin/posts/{id}/{action}`
+
+### 7.4. Querying Posts
+
+**Methods:**
+- `all()` - Get all posts
+- `getPublished()` - Published posts only
+- `getDrafts()` - Draft posts
+- `getScheduled()` - Scheduled posts
+- `getArchived()` - Archived posts
+- `find($id)` - Find by ID
+- `findBySlug($slug)` - Find by slug
+- `paginate($perPage)` - Paginated results
+
+
+
+### 7.5. Automatic Features
+
+- **Auto Slug Generation** - Generated from title if not provided
+- **Auto Reading Time** - Calculated from content (uses `BLOG_READING_TIME_WPM`, default: 200 WPM)
+
+
+## 8. Category System
+
+The package provides a simple, flat category system (no hierarchy) with ordering capabilities.
+
+### 8.1. Category Fields
+
+Each category supports:
+- **`name`** (required) - Category name
+- **`slug`** (optional) - URL-friendly slug (auto-generated from name)
+- **`description`** (optional) - Category description
+- **`order`** (optional) - Display order (integer, default: 0)
+
+### 8.2. Category Operations
+
+**Create:**
+```php
+$category = Blog::categories()->create([
+    'name' => 'Technology',
+    'description' => 'Tech-related posts',
+    'order' => 1,
+]);
 ```
 
-#### Posts CRUD
+**Order Management:**
+- `moveUp()` - Move category up
+- `moveDown()` - Move category down
+- `setOrder($order)` - Set specific order
 
-- **GET** `/api/blog/admin/posts` - List all posts
-- **POST** `/api/blog/admin/posts` - Create post
-- **GET** `/api/blog/admin/posts/{id}` - Get post
-- **PUT/PATCH** `/api/blog/admin/posts/{id}` - Update post
-- **DELETE** `/api/blog/admin/posts/{id}` - Delete post
+**Get Categories:**
+```php
+$categories = Blog::getCategoriesOrdered();  // Sorted by order
+$category->post_count;  // Auto-calculated
+$category->posts;  // Get posts in category
+```
 
-**Post Management Actions:**
+**Auto Features:**
+- Slug auto-generated from name
+- Post count auto-calculated
 
-- **POST** `/api/blog/admin/posts/{id}/publish` - Publish a post
-- **POST** `/api/blog/admin/posts/{id}/unpublish` - Unpublish a post
-- **POST** `/api/blog/admin/posts/{id}/toggle-status` - Toggle post status
-- **POST** `/api/blog/admin/posts/{id}/schedule` - Schedule a post
-- **POST** `/api/blog/admin/posts/{id}/duplicate` - Duplicate a post
-- **POST** `/api/blog/admin/posts/{id}/archive` - Archive a post
-- **POST** `/api/blog/admin/posts/{id}/restore` - Restore an archived post
+## 9. Tag System
 
-#### Categories CRUD
+The package provides a free-form tagging system with popular tags support.
 
-- **GET** `/api/blog/admin/categories` - List all categories
-- **POST** `/api/blog/admin/categories` - Create category
-- **GET** `/api/blog/admin/categories/{id}` - Get category
-- **PUT/PATCH** `/api/blog/admin/categories/{id}` - Update category
-- **DELETE** `/api/blog/admin/categories/{id}` - Delete category
+### 9.1. Tag Fields
 
-#### Media
+Each tag supports:
+- **`name`** (required) - Tag name
+- **`slug`** (optional) - URL-friendly slug (auto-generated from name)
+- **`description`** (optional) - Tag description
 
-- **POST** `/api/blog/admin/media/upload` - Upload media file
+### 9.2. Tag Operations
 
-**Request:**
-- Content-Type: `multipart/form-data`
-- Field: `file` (image file, max 10MB)
+**Create:**
+```php
+$tag = Blog::tags()->create(['name' => 'Laravel']);
+```
 
-To secure these, ensure Sanctum is installed and configured in your host app. See the [Installation Guide](INSTALLATION.md) for Sanctum setup.
+**Get Tags:**
+```php
+$tags = Blog::tags()->all();
+$popular = Blog::getPopularTags(10);
+$tag->post_count;  // Auto-calculated
+$tag->posts;  // Get posts with tag
+```
 
-## 7. How the Package Is Built (For Developers Extending It)
+**Auto-Complete:**
+Use search filter: `GET /api/blog/tags?filter[name]=lar`
 
-This section gives you a mental model of the internal architecture.
+**Auto Features:**
+- Slug auto-generated from name
+- Post count auto-calculated
 
-### 7.1. High-Level Architecture
+## 10. Author Management
 
-- **Service Provider:** `BlogServiceProvider`
-  - Merges config, binds repositories, loads migrations & routes
-- **Facade:** `Ceygenic\Blog\Facades\Blog`
-  - Provides a clean API: `Blog::posts()`, `Blog::categories()`, etc.
-- **Core Class:** `Ceygenic\Blog\Blog`
-  - Holds repository instances
-  - Exposes convenience methods (`createDraft`, `publishPost`, etc.)
-- **Repositories:**
-  - Interfaces in `src/Contracts/Repositories`
-  - Eloquent implementations in `src/Repositories/Eloquent`
-  - Sanity implementations in `src/Repositories/Sanity`
-- **Models:** `Post`, `Category`, `Tag`, `AuthorProfile`, `Media`
-- **Traits:**
-  - `HasSlug` — auto slug generation
-  - `HasReadingTime` — auto reading time calculation
-  - `BlogAuthor` — extend User model with author info
-  - `HasCache` — small caching helper for repositories
+The package links blog posts to Laravel's User model, allowing you to track authors and their profiles.
 
-### 7.2. Repository Pattern
+### 10.1. Author Profile
 
-Example: `PostRepositoryInterface`:
+Authors are linked to your Laravel User model via the `AuthorProfile` model:
+
+**Author Profile Fields:**
+- **`user_id`** (required) - Foreign key to users table
+- **`bio`** (optional) - Author biography
+- **`avatar`** (optional) - Avatar image path/URL
+- **`social_links`** (optional) - JSON array of social media links
+
+### 10.2. Setting Up Authors
+
+#### Step 1: Link User Model
+
+The package automatically uses your Laravel User model (configured in `config/blog.php`):
 
 ```php
-all(), paginate()
-find(), findBySlug()
-create(), update(), delete()
-
-Post management methods:
-createDraft, publish, unpublish, toggleStatus, schedule, duplicate, archive, restore
-
-Query helpers:
-getPublished(), getDrafts(), getScheduled(), getArchived()
-```
-
-Then implemented by:
-- `EloquentPostRepository` (database/Eloquent)
-- `SanityPostRepository` (Sanity CMS)
-
-The service provider chooses which to bind based on:
-
-```php
-$driver = config('blog.driver', 'db');
-```
-
-### 7.3. Traits and Observers
-
-**HasSlug:**
-- Listens to `creating` / `updating`
-- Generates unique slug from title or name
-
-**HasReadingTime:**
-- Listens to `saving`
-- Calculates reading time from content using `BLOG_READING_TIME_WPM`
-
-**BlogAuthor:**
-- Adds `authorProfile` (hasOne)
-- Adds `blogPosts` (hasMany)
-- Adds accessors (`bio`, `avatar`, `social links`)
-
-### 7.4. Media Library
-
-- **Model:** `Media`
-- **Migration:** `media` table with `file_path`, `disk`, etc.
-- **Controller:** `Admin\MediaController`
-- Uses Laravel `Storage` facade
-- Respects `config('blog.media.*')`
-
-You can change the underlying disk (`local`, `s3`, `cloudinary`) via `config/filesystems.php` and the `BLOG_MEDIA_DISK` env variable.
-
-## 8. Customizing and Extending in Your Project
-
-### 8.1. Overriding Models
-
-In `config/blog.php` you can override the default models:
-
-```php
-'models' => [
-    'post' => \Ceygenic\Blog\Models\Post::class,
-    'category' => \Ceygenic\Blog\Models\Category::class,
-    'tag' => \Ceygenic\Blog\Models\Tag::class,
-    'author_profile' => \Ceygenic\Blog\Models\AuthorProfile::class,
-    'media' => \Ceygenic\Blog\Models\Media::class,
+'author' => [
+    'user_model' => env('BLOG_USER_MODEL', config('auth.providers.users.model', 'App\\Models\\User')),
 ],
 ```
 
-You could point these to your own extended models if needed.
+#### Step 2: Add BlogAuthor Trait (Optional but Recommended)
 
-### 8.2. Overriding Repositories
+Add the `BlogAuthor` trait to your User model for convenience methods:
 
-If you want to customize data access logic:
+```php
+namespace App\Models;
 
-Create your own repository class in your app, e.g. `App\Repositories\CustomPostRepository`.
+use Ceygenic\Blog\Traits\BlogAuthor;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-Bind it in a service provider after `BlogServiceProvider` is loaded:
+class User extends Authenticatable
+{
+    use BlogAuthor;
+    
+    // ... rest of your User model
+}
+```
+
+This trait provides:
+- `$user->authorProfile` - Relationship to AuthorProfile
+- `$user->blogPosts` - Relationship to blog posts
+- `$user->bio` - Accessor for bio
+- `$user->avatar` - Accessor for avatar
+- `$user->social_links` - Accessor for social links
+- `$user->updateAuthorProfile()` - Method to update/create profile
+
+
+## 11. Media Library
+
+The package includes a media library system for managing uploaded images and files.
+
+### 11.1. Media Fields
+
+Each media item supports:
+- **`file_name`** - Original file name
+- **`file_path`** - Storage path
+- **`mime_type`** - File MIME type
+- **`file_size`** - File size in bytes
+- **`alt_text`** (optional) - Alternative text for images
+- **`caption`** (optional) - Image caption
+- **`disk`** - Storage disk name (local, s3, etc.)
+
+### 11.2. Media Operations
+
+**Upload:**
+```bash
+POST /api/blog/admin/media/upload
+Content-Type: multipart/form-data
+
+file: [binary]
+alt_text: "Alt text"
+caption: "Caption"
+```
+
+**Supported:** JPEG, PNG, GIF, WebP, SVG, PDF, MP4, WebM  
+**Max Size:** 10MB (configurable)
+
+**List/Get/Update/Delete:**
+- `GET /api/blog/admin/media` - List (paginated)
+- `GET /api/blog/admin/media/{id}` - Get single
+- `PUT /api/blog/admin/media/{id}` - Update (alt_text, caption)
+- `DELETE /api/blog/admin/media/{id}` - Delete (removes file and record)
+
+### 11.7. Storage Configuration
+
+Media files can be stored on different disks configured in `config/filesystems.php`:
+
+**Local Storage (Default):**
+```env
+BLOG_MEDIA_DISK=public
+BLOG_MEDIA_DIRECTORY=blog/media
+```
+
+**Amazon S3:**
+```env
+BLOG_MEDIA_DISK=s3
+BLOG_MEDIA_DIRECTORY=blog/media
+```
+
+**Cloudinary:**
+```env
+BLOG_MEDIA_DISK=cloudinary
+BLOG_MEDIA_DIRECTORY=blog/media
+```
+
+Configure disks in `config/filesystems.php`:
+
+```php
+'disks' => [
+    's3' => [
+        'driver' => 's3',
+        'key' => env('AWS_ACCESS_KEY_ID'),
+        'secret' => env('AWS_SECRET_ACCESS_KEY'),
+        'region' => env('AWS_DEFAULT_REGION'),
+        'bucket' => env('AWS_BUCKET'),
+    ],
+],
+```
+
+### 11.8. Using Media in Posts
+
+Once uploaded, you can reference media in your posts:
+
+```php
+$post = Blog::posts()->create([
+    'title' => 'My Post',
+    'content' => '...',
+    'featured_image' => '/blog/media/image-1234567890.jpg',
+]);
+```
+
+## 12. Search & Filtering
+
+The package provides comprehensive search and filtering capabilities for posts.
+
+### 12.1. Full-Text Search
+
+Search posts by title, content, and excerpt:
+
+**Via Facade:**
+```php
+$results = Blog::posts()->search('Laravel tutorial', 15);
+```
+
+**Via API:**
+```bash
+GET /api/blog/posts/search?q=Laravel+tutorial
+```
+
+**Search Features:**
+- Searches in `title`, `content`, and `excerpt` fields
+- Case-insensitive matching
+- Relevance sorting (title matches prioritized over content matches)
+- Returns paginated results
+
+### 12.2. Filtering
+
+**Available Filters:**
+- `filter[status]` - draft, published, archived
+- `filter[category_id]` - By category
+- `filter[author_id]` - By author
+- `filter[title]` - Partial match
+- `tag_id` - By tag
+- `start_date` / `end_date` - Date range
+
+**Via Model Scopes:**
+```php
+Post::byCategory($id)->get();
+Post::byTag($id)->get();
+Post::byAuthor($id)->get();
+Post::byDateRange($start, $end)->get();
+Post::byStatus('published')->get();
+```
+
+**Combine Filters:**
+```bash
+GET /api/blog/posts?filter[status]=published&filter[category_id]=1&sort=-published_at
+```
+
+### 12.3. Search with Filters
+
+```bash
+GET /api/blog/posts/search?q=Laravel&filter[status]=published&sort=-published_at
+```
+
+Search automatically ranks title matches higher than content matches.
+
+
+## 14. Customizing and Extending
+
+### 14.1. Overriding Models
+
+Override models in `config/blog.php`:
+
+```php
+'models' => [
+    'post' => \App\Models\Post::class,  // Your custom Post model
+    'category' => \App\Models\Category::class,
+    // ... other models
+],
+```
+
+### 14.2. Overriding Repositories
+
+Create custom repository and bind in your service provider:
 
 ```php
 use Ceygenic\Blog\Contracts\Repositories\PostRepositoryInterface;
@@ -501,9 +1015,7 @@ public function register()
 }
 ```
 
-### 8.3. Adding Your Own Routes
-
-You can add routes in your app that re-use the Blog facade or models, for example:
+### 14.3. Adding Custom Routes
 
 ```php
 Route::get('/my-custom-blog-feed', function () {
@@ -512,109 +1024,28 @@ Route::get('/my-custom-blog-feed', function () {
 });
 ```
 
-## 9. How to Use This Package Step-by-Step
-
-**Step 1:** Install the package
-```bash
-composer require ceygenic/blog-core
-```
-
-**Step 2:** Publish config (optional)
-```bash
-php artisan vendor:publish --tag=blog-config
-```
-
-**Step 3:** Configure `.env`
-```env
-BLOG_DRIVER=db
-BLOG_USER_MODEL=App\\Models\\User
-BLOG_MEDIA_DISK=public
-BLOG_CACHE_ENABLED=true
-```
-
-**Step 4:** Run migrations
-```bash
-php artisan migrate
-```
-
-**Step 5:** (Optional) Add `BlogAuthor` trait to your User model
-
-```php
-use Ceygenic\Blog\Traits\BlogAuthor;
-
-class User extends Authenticatable
-{
-    use BlogAuthor;
-}
-```
-
-**Step 6:** Test public API quickly
-```bash
-php artisan serve
-```
-
-In browser or Postman:
-```
-GET http://localhost:8000/api/blog/posts
-```
-
-**Step 7:** Protect admin routes with Sanctum
-
-Install Sanctum in your app (if not already)
-Configure `auth:sanctum` middleware
-Use API tokens or SPA auth to call:
-- `POST /api/blog/admin/posts`
-- `POST /api/blog/admin/media/upload`
-
-**Step 8:** Build your frontend/admin UI
-
-- Use the documented endpoints to power your Vue/React/Blade admin
-- Use `Blog` facade in controllers or services for server-side rendering
-
-**Step 9:** (Optional) Switch to Sanity driver
-
-In `.env`:
-```env
-BLOG_DRIVER=sanity
-SANITY_PROJECT_ID=...
-SANITY_DATASET=...
-SANITY_TOKEN=...
-```
-
-Now the same public endpoints will read from Sanity instead of your local DB (where implemented).
-
-## 10. Artisan Commands
-
-The package includes an Artisan command for verifying dual storage:
+## 15. Artisan Commands
 
 ```bash
 php artisan blog:verify-dual-storage
 ```
 
-This command verifies that data is synchronized between database and Sanity (if both are configured).
+Verifies dual storage configuration and repository bindings.
 
-## 11. Where to Look in the Code (For Learning/Debugging)
+## 16. Code Structure
 
-- `src/BlogServiceProvider.php` — package registration & bindings
-- `src/Blog.php` — core facade-backed class
-- `src/Contracts/Repositories/*` — abstraction for data access
-- `src/Repositories/Eloquent/*` — Eloquent implementations
-- `src/Repositories/Sanity/*` — Sanity implementations
-- `src/Models/*` — Eloquent models (check `$connection` property if using custom connections)
-- `src/Http/Controllers/Api/*` — API controllers
-- `src/Http/Resources/*` — JSON:API resources
-- `src/Traits/*` — reusable logic (slugs, reading time, authors, cache)
-- `tests/Feature/*` — best place to see examples of how everything works end-to-end
+Key files and directories for understanding the package:
 
-**Related Documentation:**
+- `src/BlogServiceProvider.php` - Package registration & repository bindings
+- `src/Blog.php` - Core facade-backed class
+- `src/Contracts/Repositories/*` - Repository interfaces
+- `src/Repositories/Eloquent/*` - Database implementations
+- `src/Repositories/Sanity/*` - Sanity CMS implementations
+- `src/Models/*` - Eloquent models
+- `src/Http/Controllers/Api/*` - API controllers
+- `src/Http/Resources/*` - JSON:API resources
+- `src/Traits/*` - Reusable traits (HasSlug, HasReadingTime, BlogAuthor, HasCache)
+- `tests/Feature/*` - Feature tests and examples
 
-- See [Installation Guide](INSTALLATION.md) for installation and basic setup
-
-## 12. Summary
-
-- You can install this package into any Laravel 10, 11, or 12 project.
-- It gives you a complete backend blog engine + API.
-- It is designed to be driver-based (DB or Sanity), configurable, and extendable.
-- Frontend/admin UI is up to your application — this package focuses on backend and API.
-- If you follow the steps above, you can reuse this blog package across many projects with minimal setup.
+For detailed installation instructions, see the [Installation Guide](INSTALLATION.md).
 
