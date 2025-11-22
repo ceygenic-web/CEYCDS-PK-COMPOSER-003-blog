@@ -1,4 +1,4 @@
-# Installation & Setup
+# Installation AND Setup
 
 ## Step 1: Install the Package
 
