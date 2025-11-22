@@ -213,16 +213,23 @@ class PublicPostApiTest extends TestCase
 
     public function test_can_filter_posts_by_author(): void
     {
+        // Create a test User model that uses the BlogAuthor trait
         if (!class_exists('App\\Models\\User')) {
             eval('
                 namespace App\Models;
                 use Illuminate\Foundation\Auth\User as Authenticatable;
+                use Ceygenic\Blog\Traits\BlogAuthor;
                 
                 class User extends Authenticatable {
+                    use BlogAuthor;
                     protected $fillable = ["name", "email", "password"];
                 }
             ');
         }
+        
+        // Configure the auth provider to use our test User model
+        $this->app['config']->set('auth.providers.users.model', 'App\\Models\\User');
+        $this->app['config']->set('blog.author.user_model', 'App\\Models\\User');
 
         /** @phpstan-ignore-next-line */
         $author = \App\Models\User::create(['name' => 'John Doe', 'email' => 'john@test.com']);

@@ -29,6 +29,10 @@ class AuthorManagementTest extends TestCase
                 }
             ');
         }
+        
+        // Configure the auth provider and blog config to use our test User model
+        $this->app['config']->set('auth.providers.users.model', 'App\\Models\\User');
+        $this->app['config']->set('blog.author.user_model', 'App\\Models\\User');
     }
 
     public function test_can_create_author_profile(): void
