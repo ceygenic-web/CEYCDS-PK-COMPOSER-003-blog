@@ -13,25 +13,25 @@ class EloquentPostRepository implements PostRepositoryInterface
     use HasCache;
     public function all(): Collection
     {
-        return Post::with(['category', 'tags', 'author'])->get();
+        return Post::with(['category', 'tags', 'author.authorProfile'])->get();
     }
 
     public function paginate(int $perPage = 15): LengthAwarePaginator
     {
-        return Post::with(['category', 'tags', 'author'])->paginate($perPage);
+        return Post::with(['category', 'tags', 'author.authorProfile'])->paginate($perPage);
     }
 
     public function find(int $id)
     {
         return $this->remember("posts:{$id}", function () use ($id) {
-            return Post::with(['category', 'tags', 'author'])->find($id);
+            return Post::with(['category', 'tags', 'author.authorProfile'])->find($id);
         }, 'posts');
     }
 
     public function findBySlug(string $slug)
     {
         return $this->remember("posts:slug:{$slug}", function () use ($slug) {
-            return Post::with(['category', 'tags', 'author'])->where('slug', $slug)->first();
+            return Post::with(['category', 'tags', 'author.authorProfile'])->where('slug', $slug)->first();
         }, 'posts');
     }
 
@@ -46,7 +46,7 @@ class EloquentPostRepository implements PostRepositoryInterface
         // Clear cache when new post is created
         $this->clearPostCache();
 
-        return $post->load(['category', 'tags', 'author']);
+        return $post->load(['category', 'tags', 'author.authorProfile']);
     }
 
     public function update(int $id, array $data): bool
@@ -65,6 +65,8 @@ class EloquentPostRepository implements PostRepositoryInterface
             $this->clearPostCache();
             $this->forgetCache("posts:{$id}");
             $this->forgetCache("posts:slug:{$post->slug}");
+            // Reload relationships after update
+            $post->load(['category', 'tags', 'author.authorProfile']);
         }
 
         return $result;
@@ -97,7 +99,7 @@ class EloquentPostRepository implements PostRepositoryInterface
     public function getPublished(): Collection
     {
         return $this->remember('posts:published', function () {
-            return Post::with(['category', 'tags', 'author'])
+            return Post::with(['category', 'tags', 'author.authorProfile'])
                 ->where('status', 'published')
                 ->whereNotNull('published_at')
                 ->where('published_at', '<=', now())
@@ -131,7 +133,7 @@ class EloquentPostRepository implements PostRepositoryInterface
         $post = Post::findOrFail($id);
         $post->publish($publishedAt);
 
-        return $post->load(['category', 'tags', 'author']);
+        return $post->load(['category', 'tags', 'author.authorProfile']);
     }
 
     public function unpublish(int $id)
@@ -139,7 +141,7 @@ class EloquentPostRepository implements PostRepositoryInterface
         $post = Post::findOrFail($id);
         $post->unpublish();
 
-        return $post->load(['category', 'tags', 'author']);
+        return $post->load(['category', 'tags', 'author.authorProfile']);
     }
 
     public function toggleStatus(int $id)
@@ -147,7 +149,7 @@ class EloquentPostRepository implements PostRepositoryInterface
         $post = Post::findOrFail($id);
         $post->toggleStatus();
 
-        return $post->load(['category', 'tags', 'author']);
+        return $post->load(['category', 'tags', 'author.authorProfile']);
     }
 
     public function schedule(int $id, \DateTime $date)
@@ -155,7 +157,7 @@ class EloquentPostRepository implements PostRepositoryInterface
         $post = Post::findOrFail($id);
         $post->schedule($date);
 
-        return $post->load(['category', 'tags', 'author']);
+        return $post->load(['category', 'tags', 'author.authorProfile']);
     }
 
     public function duplicate(int $id, ?string $newTitle = null)
@@ -170,7 +172,7 @@ class EloquentPostRepository implements PostRepositoryInterface
         $post = Post::findOrFail($id);
         $post->archive();
 
-        return $post->load(['category', 'tags', 'author']);
+        return $post->load(['category', 'tags', 'author.authorProfile']);
     }
 
     public function restore(int $id)
@@ -178,7 +180,7 @@ class EloquentPostRepository implements PostRepositoryInterface
         $post = Post::findOrFail($id);
         $post->restore();
 
-        return $post->load(['category', 'tags', 'author']);
+        return $post->load(['category', 'tags', 'author.authorProfile']);
     }
 
     public function getDrafts(): Collection

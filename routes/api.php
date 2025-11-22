@@ -7,6 +7,7 @@ use Ceygenic\Blog\Http\Controllers\Api\Public\TagController as PublicTagControll
 use Ceygenic\Blog\Http\Controllers\Api\Public\AuthorController as PublicAuthorController;
 use Ceygenic\Blog\Http\Controllers\Api\Admin\PostController as AdminPostController;
 use Ceygenic\Blog\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController;
+use Ceygenic\Blog\Http\Controllers\Api\Admin\TagController as AdminTagController;
 use Ceygenic\Blog\Http\Controllers\Api\Admin\MediaController as AdminMediaController;
 
 /* Public API Routes */
@@ -53,6 +54,9 @@ Route::prefix('api/blog/admin')->name('blog.api.admin.')->middleware(['auth:sanc
     Route::post('/categories/{id}/move-up', [AdminCategoryController::class, 'moveUp'])->name('categories.move-up');
     Route::post('/categories/{id}/move-down', [AdminCategoryController::class, 'moveDown'])->name('categories.move-down');
     Route::post('/categories/{id}/set-order', [AdminCategoryController::class, 'setOrder'])->name('categories.set-order');
+    
+    // Tags CRUD
+    Route::apiResource('tags', AdminTagController::class);
     
     // Media
     Route::get('/media', [AdminMediaController::class, 'index'])->name('media.index');

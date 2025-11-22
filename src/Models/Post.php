@@ -25,6 +25,7 @@ class Post extends Model
         'status',
         'published_at',
         'reading_time',
+        'index',
     ];
 
     protected $casts = [

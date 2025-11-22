@@ -32,6 +32,8 @@ class PostController extends Controller
             'author_id' => 'nullable|exists:users,id',
             'status' => ['nullable', Rule::in(['draft', 'published', 'archived'])],
             'published_at' => 'nullable|date',
+            'reading_time' => 'nullable|integer|min:0',
+            'index' => 'nullable|integer|min:0',
             'tags' => 'nullable|array',
             'tags.*' => 'exists:tags,id',
         ]);
@@ -88,6 +90,8 @@ class PostController extends Controller
             'category_id' => 'nullable|exists:categories,id',
             'status' => ['sometimes', Rule::in(['draft', 'published', 'archived'])],
             'published_at' => 'nullable|date',
+            'reading_time' => 'nullable|integer|min:0',
+            'index' => 'nullable|integer|min:0',
             'tags' => 'nullable|array',
             'tags.*' => 'exists:tags,id',
         ]);
