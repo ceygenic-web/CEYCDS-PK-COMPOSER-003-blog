@@ -12,7 +12,13 @@ class Post extends Model
 {
     use HasSlug, HasReadingTime;
 
-    protected $table = 'posts';
+    protected $table;
+
+    public function __construct(array $attributes = [])
+    {
+        $this->table = config('blog.tables.posts', 'posts');
+        parent::__construct($attributes);
+    }
 
     protected $fillable = [
         'title',
@@ -52,7 +58,8 @@ class Post extends Model
 
     public function tags(): BelongsToMany
     {
-        return $this->belongsToMany(Tag::class);
+        $pivotTable = config('blog.tables.post_tag', 'post_tag');
+        return $this->belongsToMany(Tag::class, $pivotTable);
     }
 
     // Check if the post is published.

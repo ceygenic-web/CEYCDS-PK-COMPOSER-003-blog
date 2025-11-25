@@ -10,7 +10,13 @@ class Tag extends Model
 {
     use HasSlug;
 
-    protected $table = 'tags';
+    protected $table;
+
+    public function __construct(array $attributes = [])
+    {
+        $this->table = config('blog.tables.tags', 'tags');
+        parent::__construct($attributes);
+    }
 
     protected $fillable = [
         'name',
@@ -21,7 +27,8 @@ class Tag extends Model
     // Get the posts for the tag.
     public function posts(): BelongsToMany
     {
-        return $this->belongsToMany(Post::class);
+        $pivotTable = config('blog.tables.post_tag', 'post_tag');
+        return $this->belongsToMany(Post::class, $pivotTable);
     }
 
     // Get the post count for this tag.

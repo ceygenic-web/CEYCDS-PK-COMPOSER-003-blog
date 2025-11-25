@@ -8,6 +8,68 @@ return [
   
     'driver' => env('BLOG_DRIVER', 'db'),
 
+    // Route Configuration - Customize route prefixes and middleware
+    'routes' => [
+        'prefix' => env('BLOG_ROUTE_PREFIX', 'api/blog'),
+        'middleware' => [
+            'public' => env('BLOG_PUBLIC_MIDDLEWARE', 'throttle:120,1'),
+            'admin' => env('BLOG_ADMIN_MIDDLEWARE', 'auth:sanctum,throttle:60,1'),
+        ],
+    ],
+
+    // Table Configuration - Customize table names to avoid conflicts
+    'tables' => [
+        'posts' => env('BLOG_TABLE_POSTS', 'posts'),
+        'categories' => env('BLOG_TABLE_CATEGORIES', 'categories'),
+        'tags' => env('BLOG_TABLE_TAGS', 'tags'),
+        'author_profiles' => env('BLOG_TABLE_AUTHOR_PROFILES', 'author_profiles'),
+        'media' => env('BLOG_TABLE_MEDIA', 'media'),
+        'post_tag' => env('BLOG_TABLE_POST_TAG', 'post_tag'),
+    ],
+
+    // Feature Toggles - Enable/disable specific features
+    'features' => [
+        'media' => env('BLOG_FEATURE_MEDIA', true),
+        'admin_api' => env('BLOG_FEATURE_ADMIN_API', true),
+        'sanity' => env('BLOG_FEATURE_SANITY', true),
+        'search' => env('BLOG_FEATURE_SEARCH', true),
+        'rate_limiting' => env('BLOG_FEATURE_RATE_LIMITING', true),
+        'events' => env('BLOG_FEATURE_EVENTS', true),
+    ],
+
+    // Resource Configuration - Customize API resource classes
+    'resources' => [
+        'post' => env('BLOG_RESOURCE_POST', \Ceygenic\Blog\Http\Resources\PostResource::class),
+        'category' => env('BLOG_RESOURCE_CATEGORY', \Ceygenic\Blog\Http\Resources\CategoryResource::class),
+        'tag' => env('BLOG_RESOURCE_TAG', \Ceygenic\Blog\Http\Resources\TagResource::class),
+        'author' => env('BLOG_RESOURCE_AUTHOR', \Ceygenic\Blog\Http\Resources\AuthorResource::class),
+        'media' => env('BLOG_RESOURCE_MEDIA', \Ceygenic\Blog\Http\Resources\MediaResource::class),
+    ],
+
+    // Validation Rules Configuration - Customize validation rules
+    'validation' => [
+        'post' => [
+            'title' => env('BLOG_VALIDATION_POST_TITLE', 'required|string|max:255'),
+            'slug' => env('BLOG_VALIDATION_POST_SLUG', 'nullable|string|max:255|unique:posts,slug'),
+            'content' => env('BLOG_VALIDATION_POST_CONTENT', 'required|string'),
+            'status' => env('BLOG_VALIDATION_POST_STATUS', 'nullable|in:draft,published,archived'),
+        ],
+        'category' => [
+            'name' => env('BLOG_VALIDATION_CATEGORY_NAME', 'required|string|max:255'),
+            'slug' => env('BLOG_VALIDATION_CATEGORY_SLUG', 'nullable|string|max:255|unique:categories,slug'),
+        ],
+        'tag' => [
+            'name' => env('BLOG_VALIDATION_TAG_NAME', 'required|string|max:255'),
+            'slug' => env('BLOG_VALIDATION_TAG_SLUG', 'nullable|string|max:255|unique:tags,slug'),
+        ],
+    ],
+
+    // Pagination Configuration
+    'pagination' => [
+        'per_page' => env('BLOG_PAGINATION_PER_PAGE', 15),
+        'max_per_page' => env('BLOG_PAGINATION_MAX_PER_PAGE', 100),
+    ],
+
     // Sanity Configuration - Configuration for Sanity CMS integration. These values are only used when the driver is set to 'sanity'.
     'sanity' => [
         'project_id' => env('SANITY_PROJECT_ID', ''),

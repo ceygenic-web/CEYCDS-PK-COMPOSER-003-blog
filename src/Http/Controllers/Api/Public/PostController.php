@@ -61,9 +61,10 @@ class PostController extends Controller
             ->allowedFilters(['title', 'status', 'category_id', 'author_id'])
             ->allowedSorts(['title', 'published_at', 'created_at', 'reading_time'])
             ->defaultSort('-published_at')
-            ->paginate($request->get('per_page', 15));
+            ->paginate($this->getPerPage($request));
 
-        return PostResource::collection($posts);
+        $resourceClass = $this->getResourceClass('post');
+        return $resourceClass::collection($posts);
     }
 
 
@@ -84,7 +85,8 @@ class PostController extends Controller
             ], 404);
         }
 
-        return new PostResource($post);
+        $resourceClass = $this->getResourceClass('post');
+        return new $resourceClass($post);
     }
 
     // Search posts (full-text search with relevance sorting)
@@ -97,9 +99,10 @@ class PostController extends Controller
         }
 
         // Use repository search method for full-text search with relevance
-        $posts = Blog::posts()->search($searchQuery, $request->get('per_page', 15));
+        $posts = Blog::posts()->search($searchQuery, $this->getPerPage($request));
 
-        return PostResource::collection($posts);
+        $resourceClass = $this->getResourceClass('post');
+        return $resourceClass::collection($posts);
     }
 }
 

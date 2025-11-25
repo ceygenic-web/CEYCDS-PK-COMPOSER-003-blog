@@ -6,7 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class Media extends Model
 {
-    protected $table = 'media';
+    protected $table;
+
+    public function __construct(array $attributes = [])
+    {
+        $this->table = config('blog.tables.media', 'media');
+        parent::__construct($attributes);
+    }
 
     protected $fillable = [
         'file_name',

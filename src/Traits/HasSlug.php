@@ -47,7 +47,7 @@ trait HasSlug
         // Get the table name from the model
         $table = (new static())->getTable();
 
-        while (static::slugExists($slug, $excludeId, $table)) {
+        while (static::slugExists($slug, $table, $excludeId)) {
             $slug = $originalSlug . '-' . $counter;
             $counter++;
         }
@@ -59,11 +59,11 @@ trait HasSlug
      * Check if a slug exists in the database.
      *
      * @param string $slug
-     * @param int|null $excludeId
      * @param string $table
+     * @param int|null $excludeId
      * @return bool
      */
-    protected static function slugExists(string $slug, ?int $excludeId = null, string $table): bool
+    protected static function slugExists(string $slug, string $table, ?int $excludeId = null): bool
     {
         $query = \Illuminate\Support\Facades\DB::table($table)->where('slug', $slug);
 

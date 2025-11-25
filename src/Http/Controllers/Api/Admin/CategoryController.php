@@ -14,8 +14,9 @@ class CategoryController extends Controller
     // Display a listing of categories
     public function index(Request $request): \Illuminate\Http\Resources\Json\AnonymousResourceCollection
     {
-        $categories = Blog::categories()->paginate($request->get('per_page', 15));
-        return CategoryResource::collection($categories);
+        $categories = Blog::categories()->paginate($this->getPerPage($request));
+        $resourceClass = $this->getResourceClass('category');
+        return $resourceClass::collection($categories);
     }
 
     // Store a newly created category
@@ -31,7 +32,8 @@ class CategoryController extends Controller
 
         $category = Blog::categories()->create($validated);
 
-        return (new CategoryResource($category))->response()->setStatusCode(201);
+        $resourceClass = $this->getResourceClass('category');
+        return (new $resourceClass($category))->response()->setStatusCode(201);
     }
 
     // Display the specified category
@@ -51,7 +53,8 @@ class CategoryController extends Controller
             ], 404);
         }
 
-        return new CategoryResource($category);
+        $resourceClass = $this->getResourceClass('category');
+        return new $resourceClass($category);
     }
 
     // Update the specified category
@@ -81,7 +84,8 @@ class CategoryController extends Controller
         Blog::categories()->update($id, $validated);
         $category = Blog::categories()->find($id);
 
-        return new CategoryResource($category);
+        $resourceClass = $this->getResourceClass('category');
+        return new $resourceClass($category);
     }
 
     // Remove the specified category
@@ -126,7 +130,8 @@ class CategoryController extends Controller
         Blog::moveCategoryUp($id);
         $category = Blog::categories()->find($id);
 
-        return new CategoryResource($category);
+        $resourceClass = $this->getResourceClass('category');
+        return new $resourceClass($category);
     }
 
     // Move category down in order
@@ -149,7 +154,8 @@ class CategoryController extends Controller
         Blog::moveCategoryDown($id);
         $category = Blog::categories()->find($id);
 
-        return new CategoryResource($category);
+        $resourceClass = $this->getResourceClass('category');
+        return new $resourceClass($category);
     }
 
     // Set category order
@@ -176,7 +182,8 @@ class CategoryController extends Controller
         Blog::setCategoryOrder($id, $validated['order']);
         $category = Blog::categories()->find($id);
 
-        return new CategoryResource($category);
+        $resourceClass = $this->getResourceClass('category');
+        return new $resourceClass($category);
     }
 }
 

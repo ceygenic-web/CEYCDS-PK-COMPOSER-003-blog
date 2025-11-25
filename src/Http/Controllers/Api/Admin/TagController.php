@@ -14,8 +14,9 @@ class TagController extends Controller
     // Display a listing of tags
     public function index(Request $request): \Illuminate\Http\Resources\Json\AnonymousResourceCollection
     {
-        $tags = Blog::tags()->paginate($request->get('per_page', 15));
-        return TagResource::collection($tags);
+        $tags = Blog::tags()->paginate($this->getPerPage($request));
+        $resourceClass = $this->getResourceClass('tag');
+        return $resourceClass::collection($tags);
     }
 
     // Store a newly created tag
@@ -29,7 +30,8 @@ class TagController extends Controller
 
         $tag = Blog::tags()->create($validated);
 
-        return (new TagResource($tag))->response()->setStatusCode(201);
+        $resourceClass = $this->getResourceClass('tag');
+        return (new $resourceClass($tag))->response()->setStatusCode(201);
     }
 
     // Display the specified tag
@@ -49,7 +51,8 @@ class TagController extends Controller
             ], 404);
         }
 
-        return new TagResource($tag);
+        $resourceClass = $this->getResourceClass('tag');
+        return new $resourceClass($tag);
     }
 
     // Update the specified tag
@@ -78,7 +81,8 @@ class TagController extends Controller
         Blog::tags()->update($id, $validated);
         $tag = Blog::tags()->find($id);
 
-        return new TagResource($tag);
+        $resourceClass = $this->getResourceClass('tag');
+        return new $resourceClass($tag);
     }
 
     // Remove the specified tag

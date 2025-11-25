@@ -42,6 +42,12 @@ class EloquentTagRepository implements TagRepositoryInterface
     {
         $tag = Tag::create($data);
         $this->clearTagCache();
+        
+        // Dispatch event
+        if (config('blog.features.events', true)) {
+            event(new \Ceygenic\Blog\Events\TagCreated($tag));
+        }
+        
         return $tag;
     }
 

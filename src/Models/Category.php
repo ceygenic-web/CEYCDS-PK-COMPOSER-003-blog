@@ -10,7 +10,13 @@ class Category extends Model
 {
     use HasSlug;
 
-    protected $table = 'categories';
+    protected $table;
+
+    public function __construct(array $attributes = [])
+    {
+        $this->table = config('blog.tables.categories', 'categories');
+        parent::__construct($attributes);
+    }
 
     protected $fillable = [
         'name',

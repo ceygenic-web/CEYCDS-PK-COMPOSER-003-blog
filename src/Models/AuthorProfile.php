@@ -7,7 +7,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class AuthorProfile extends Model
 {
-    protected $table = 'author_profiles';
+    protected $table;
+
+    public function __construct(array $attributes = [])
+    {
+        $this->table = config('blog.tables.author_profiles', 'author_profiles');
+        parent::__construct($attributes);
+    }
 
     protected $fillable = [
         'user_id',

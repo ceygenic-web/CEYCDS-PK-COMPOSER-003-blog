@@ -23,9 +23,10 @@ class CategoryController extends Controller
             ->allowedFilters(['name', 'slug'])
             ->allowedSorts(['name', 'created_at'])
             ->defaultSort('name')
-            ->paginate($request->get('per_page', 15));
+            ->paginate($this->getPerPage($request));
 
-        return CategoryResource::collection($categories);
+        $resourceClass = $this->getResourceClass('category');
+        return $resourceClass::collection($categories);
     }
 
     // Get posts by category 
@@ -52,9 +53,10 @@ class CategoryController extends Controller
             ->allowedFilters(['title', 'status'])
             ->allowedSorts(['title', 'published_at', 'created_at'])
             ->defaultSort('-published_at')
-            ->paginate($request->get('per_page', 15));
+            ->paginate($this->getPerPage($request));
 
-        return PostResource::collection($posts);
+        $resourceClass = $this->getResourceClass('post');
+        return $resourceClass::collection($posts);
     }
 }
 

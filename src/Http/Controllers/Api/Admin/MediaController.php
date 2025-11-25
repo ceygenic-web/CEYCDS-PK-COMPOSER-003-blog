@@ -54,16 +54,18 @@ class MediaController extends Controller
             'disk' => $disk,
         ]);
 
-        return (new MediaResource($media))->response()->setStatusCode(201);
+        $resourceClass = $this->getResourceClass('media');
+        return (new $resourceClass($media))->response()->setStatusCode(201);
     }
 
     // List all media
     public function index(Request $request): \Illuminate\Http\Resources\Json\AnonymousResourceCollection
     {
         $media = Media::orderBy('created_at', 'desc')
-            ->paginate($request->get('per_page', 15));
+            ->paginate($this->getPerPage($request));
 
-        return MediaResource::collection($media);
+        $resourceClass = $this->getResourceClass('media');
+        return $resourceClass::collection($media);
     }
 
     // Get single media
@@ -83,7 +85,8 @@ class MediaController extends Controller
             ], 404);
         }
 
-        return new MediaResource($media);
+        $resourceClass = $this->getResourceClass('media');
+        return new $resourceClass($media);
     }
 
     // Update media (alt_text, caption)
@@ -110,7 +113,8 @@ class MediaController extends Controller
 
         $media->update($validated);
 
-        return new MediaResource($media);
+        $resourceClass = $this->getResourceClass('media');
+        return new $resourceClass($media);
     }
 
     // Delete media

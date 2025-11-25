@@ -12,11 +12,60 @@ use Ceygenic\Blog\Http\Controllers\Api\Admin\MediaController as AdminMediaContro
 
 /* Public API Routes */
 
+// Get route configuration
+$routePrefix = config('blog.routes.prefix', 'api/blog');
+$publicMiddleware = config('blog.routes.middleware.public', 'throttle:120,1');
+$adminMiddleware = config('blog.routes.middleware.admin', 'auth:sanctum,throttle:60,1');
 
-Route::prefix('api/blog')->name('blog.api.')->middleware('throttle:120,1')->group(function () {
+// Parse middleware configuration into normalized arrays
+$parseMiddleware = function ($middleware) {
+    if (empty($middleware)) {
+        return [];
+    }
+
+    if (is_array($middleware)) {
+        return array_values(array_filter(array_map('trim', $middleware), fn ($m) => $m !== ''));
+    }
+
+    if (is_string($middleware)) {
+        $middleware = trim($middleware);
+
+        if ($middleware === '') {
+            return [];
+        }
+
+        if (str_contains($middleware, '|')) {
+            $parts = preg_split('/\s*\|\s*/', $middleware);
+        } elseif (str_contains($middleware, ',')) {
+            // Split on commas that are not followed by a numeric value (to keep throttle parameters intact)
+            $parts = preg_split('/,(?=\s*[^\d])/', $middleware);
+        } else {
+            $parts = [$middleware];
+        }
+
+        return array_values(array_filter(array_map('trim', $parts ?: []), fn ($m) => $m !== ''));
+    }
+
+    return array_filter([(string) $middleware]);
+};
+
+// Apply rate limiting feature toggle
+$publicMiddlewareArray = $parseMiddleware($publicMiddleware);
+if (!config('blog.features.rate_limiting', true)) {
+    $publicMiddlewareArray = array_filter($publicMiddlewareArray, fn($m) => !str_starts_with($m, 'throttle:'));
+}
+
+$adminMiddlewareArray = $parseMiddleware($adminMiddleware);
+if (!config('blog.features.rate_limiting', true)) {
+    $adminMiddlewareArray = array_filter($adminMiddlewareArray, fn($m) => !str_starts_with($m, 'throttle:'));
+}
+
+Route::prefix($routePrefix)->name('blog.api.')->middleware($publicMiddlewareArray)->group(function () {
     // Posts
     Route::get('/posts', [PublicPostController::class, 'index'])->name('posts.index');
-    Route::get('/posts/search', [PublicPostController::class, 'search'])->name('posts.search');
+    if (config('blog.features.search', true)) {
+        Route::get('/posts/search', [PublicPostController::class, 'search'])->name('posts.search');
+    }
     Route::get('/posts/{post}', [PublicPostController::class, 'show'])->name('posts.show');
     
     // Categories
@@ -34,7 +83,9 @@ Route::prefix('api/blog')->name('blog.api.')->middleware('throttle:120,1')->grou
 });
 
 // Admin API Routes (Protected)
-Route::prefix('api/blog/admin')->name('blog.api.admin.')->middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
+// Only register admin routes if admin API feature is enabled
+if (config('blog.features.admin_api', true)) {
+    Route::prefix($routePrefix . '/admin')->name('blog.api.admin.')->middleware($adminMiddlewareArray)->group(function () {
     // Posts CRUD
     Route::apiResource('posts', AdminPostController::class);
     
@@ -58,12 +109,15 @@ Route::prefix('api/blog/admin')->name('blog.api.admin.')->middleware(['auth:sanc
     // Tags CRUD
     Route::apiResource('tags', AdminTagController::class);
     
-    // Media
-    Route::get('/media', [AdminMediaController::class, 'index'])->name('media.index');
-    Route::post('/media/upload', [AdminMediaController::class, 'upload'])->name('media.upload');
-    Route::get('/media/{id}', [AdminMediaController::class, 'show'])->name('media.show');
-    Route::put('/media/{id}', [AdminMediaController::class, 'update'])->name('media.update');
-    Route::patch('/media/{id}', [AdminMediaController::class, 'update'])->name('media.update');
-    Route::delete('/media/{id}', [AdminMediaController::class, 'destroy'])->name('media.destroy');
-});
+    // Media (only if feature is enabled)
+    if (config('blog.features.media', true)) {
+        Route::get('/media', [AdminMediaController::class, 'index'])->name('media.index');
+        Route::post('/media/upload', [AdminMediaController::class, 'upload'])->name('media.upload');
+        Route::get('/media/{id}', [AdminMediaController::class, 'show'])->name('media.show');
+        Route::put('/media/{id}', [AdminMediaController::class, 'update'])->name('media.update');
+        Route::patch('/media/{id}', [AdminMediaController::class, 'update'])->name('media.update');
+        Route::delete('/media/{id}', [AdminMediaController::class, 'destroy'])->name('media.destroy');
+    }
+    });
+}
 

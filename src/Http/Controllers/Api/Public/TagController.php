@@ -20,7 +20,8 @@ class TagController extends Controller
         if ($request->has('search') && !empty($request->get('search'))) {
             $limit = $request->get('limit', 10);
             $tags = Blog::tags()->search($request->get('search'), $limit);
-            return TagResource::collection($tags);
+            $resourceClass = $this->getResourceClass('tag');
+            return $resourceClass::collection($tags);
         }
 
         $query = \Ceygenic\Blog\Models\Tag::query();
@@ -29,9 +30,10 @@ class TagController extends Controller
             ->allowedFilters(['name', 'slug'])
             ->allowedSorts(['name', 'created_at'])
             ->defaultSort('name')
-            ->paginate($request->get('per_page', 15));
+            ->paginate($this->getPerPage($request));
 
-        return TagResource::collection($tags);
+        $resourceClass = $this->getResourceClass('tag');
+        return $resourceClass::collection($tags);
     }
 
     // Get popular tags
@@ -39,7 +41,8 @@ class TagController extends Controller
     {
         $limit = $request->get('limit', 10);
         $tags = Blog::tags()->getPopular($limit);
-        return TagResource::collection($tags);
+        $resourceClass = $this->getResourceClass('tag');
+        return $resourceClass::collection($tags);
     }
 
     // Get posts by tag
@@ -70,9 +73,10 @@ class TagController extends Controller
             ->allowedFilters(['title', 'status'])
             ->allowedSorts(['title', 'published_at', 'created_at'])
             ->defaultSort('-published_at')
-            ->paginate($request->get('per_page', 15));
+            ->paginate($this->getPerPage($request));
 
-        return PostResource::collection($posts);
+        $resourceClass = $this->getResourceClass('post');
+        return $resourceClass::collection($posts);
     }
 }
 

@@ -46,7 +46,19 @@ class EloquentPostRepository implements PostRepositoryInterface
         // Clear cache when new post is created
         $this->clearPostCache();
 
-        return $post->load(['category', 'tags', 'author.authorProfile']);
+        $post->load(['category', 'tags', 'author.authorProfile']);
+
+        // Dispatch event
+        if (config('blog.features.events', true)) {
+            event(new \Ceygenic\Blog\Events\PostCreated($post));
+            
+            // Dispatch publish event if status is published
+            if ($post->status === 'published' && $post->published_at) {
+                event(new \Ceygenic\Blog\Events\PostPublished($post));
+            }
+        }
+
+        return $post;
     }
 
     public function update(int $id, array $data): bool
@@ -58,7 +70,9 @@ class EloquentPostRepository implements PostRepositoryInterface
             unset($data['tags']);
         }
 
+        $oldStatus = $post->status;
         $result = $post->update($data);
+        $post->refresh();
 
         // Clear cache when post is updated
         if ($result) {
@@ -67,6 +81,16 @@ class EloquentPostRepository implements PostRepositoryInterface
             $this->forgetCache("posts:slug:{$post->slug}");
             // Reload relationships after update
             $post->load(['category', 'tags', 'author.authorProfile']);
+            
+            // Dispatch events
+            if (config('blog.features.events', true)) {
+                event(new \Ceygenic\Blog\Events\PostUpdated($post));
+                
+                // Dispatch publish event if status changed to published
+                if ($oldStatus !== 'published' && $post->status === 'published' && $post->published_at) {
+                    event(new \Ceygenic\Blog\Events\PostPublished($post));
+                }
+            }
         }
 
         return $result;
@@ -76,6 +100,12 @@ class EloquentPostRepository implements PostRepositoryInterface
     {
         $post = Post::findOrFail($id);
         $slug = $post->slug;
+        
+        // Dispatch event before deletion
+        if (config('blog.features.events', true)) {
+            event(new \Ceygenic\Blog\Events\PostDeleted($post));
+        }
+        
         $result = $post->delete();
 
         // Clear cache when post is deleted
@@ -132,14 +162,31 @@ class EloquentPostRepository implements PostRepositoryInterface
     {
         $post = Post::findOrFail($id);
         $post->publish($publishedAt);
+        
+        // Clear cache
+        $this->clearPostCache();
+        $this->forgetCache("posts:{$id}");
+        $this->forgetCache("posts:slug:{$post->slug}");
+        
+        $post->load(['category', 'tags', 'author.authorProfile']);
+        
+        // Dispatch event
+        if (config('blog.features.events', true)) {
+            event(new \Ceygenic\Blog\Events\PostPublished($post));
+        }
 
-        return $post->load(['category', 'tags', 'author.authorProfile']);
+        return $post;
     }
 
     public function unpublish(int $id)
     {
         $post = Post::findOrFail($id);
         $post->unpublish();
+        
+        // Clear cache
+        $this->clearPostCache();
+        $this->forgetCache("posts:{$id}");
+        $this->forgetCache("posts:slug:{$post->slug}");
 
         return $post->load(['category', 'tags', 'author.authorProfile']);
     }

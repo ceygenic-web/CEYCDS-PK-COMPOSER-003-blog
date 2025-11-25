@@ -42,6 +42,12 @@ class EloquentCategoryRepository implements CategoryRepositoryInterface
     {
         $category = Category::create($data);
         $this->clearCategoryCache();
+        
+        // Dispatch event
+        if (config('blog.features.events', true)) {
+            event(new \Ceygenic\Blog\Events\CategoryCreated($category));
+        }
+        
         return $category;
     }
 
