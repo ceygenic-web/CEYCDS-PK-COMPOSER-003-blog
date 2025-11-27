@@ -5,63 +5,29 @@ namespace Ceygenic\Blog\Http\Controllers\Api\Public;
 use Ceygenic\Blog\Facades\Blog;
 use Ceygenic\Blog\Http\Controllers\Controller;
 use Ceygenic\Blog\Http\Resources\PostResource;
+use Ceygenic\Blog\Services\PostService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Spatie\QueryBuilder\QueryBuilder;
 
 class PostController extends Controller
 {
     // List all posts (paginated, filterable, sortable)
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request, PostService $postService): AnonymousResourceCollection
     {
-        $query = \Ceygenic\Blog\Models\Post::query()
-            ->with(['category', 'tags', 'author']);
+        $filters = $request->only([
+            'category_id',
+            'tag_id',
+            'tag_ids',
+            'author_id',
+            'start_date',
+            'end_date',
+            'status',
+        ]);
 
-        // Apply filters
-        if ($request->has('category_id')) {
-            $query->byCategory($request->get('category_id'));
-        }
+        $perPage = $this->getPerPage($request);
 
-        if ($request->has('tag_id')) {
-            $query->byTag($request->get('tag_id'));
-        }
-
-        if ($request->has('tag_ids')) {
-            $tagIds = is_array($request->get('tag_ids')) 
-                ? $request->get('tag_ids') 
-                : explode(',', $request->get('tag_ids'));
-            $query->byTags(array_map('intval', $tagIds));
-        }
-
-        if ($request->has('author_id')) {
-            $query->byAuthor($request->get('author_id'));
-        }
-
-        if ($request->has('start_date') || $request->has('end_date')) {
-            $query->byDateRange(
-                $request->get('start_date'),
-                $request->get('end_date')
-            );
-        }
-
-        // Status filter (only for published in public API, unless admin)
-        if ($request->has('status')) {
-            // In public API, only show published posts
-            // Admin endpoints can filter by any status
-            if ($request->get('status') === 'published') {
-                $query->published();
-            }
-        } else {
-            // Default: only show published posts
-            $query->published();
-        }
-
-        $posts = QueryBuilder::for($query)
-            ->allowedFilters(['title', 'status', 'category_id', 'author_id'])
-            ->allowedSorts(['title', 'published_at', 'created_at', 'reading_time'])
-            ->defaultSort('-published_at')
-            ->paginate($this->getPerPage($request));
+        $posts = $postService->getPublicPosts($filters, $perPage);
 
         $resourceClass = $this->getResourceClass('post');
         return $resourceClass::collection($posts);

@@ -3,7 +3,9 @@
 namespace Ceygenic\Blog\Services;
 
 use Ceygenic\Blog\Models\Post;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
+use Spatie\QueryBuilder\QueryBuilder;
 
 class PostService
 {
@@ -89,5 +91,57 @@ class PostService
 
         return $post->fresh();
     }
-}
 
+    protected function buildPublicPostQuery(array $filters = [])
+    {
+        $query = Post::query()
+            ->with(['category', 'tags', 'author']);
+
+        if (array_key_exists('category_id', $filters) && $filters['category_id'] !== null) {
+            $query->byCategory((int) $filters['category_id']);
+        }
+
+        if (array_key_exists('tag_id', $filters) && $filters['tag_id'] !== null) {
+            $query->byTag((int) $filters['tag_id']);
+        }
+
+        if (array_key_exists('tag_ids', $filters) && $filters['tag_ids'] !== null) {
+            $tagIds = is_array($filters['tag_ids'])
+                ? $filters['tag_ids']
+                : explode(',', (string) $filters['tag_ids']);
+
+            $query->byTags(array_map('intval', $tagIds));
+        }
+
+        if (array_key_exists('author_id', $filters) && $filters['author_id'] !== null) {
+            $query->byAuthor((int) $filters['author_id']);
+        }
+
+        if (
+            array_key_exists('start_date', $filters) && $filters['start_date'] !== null ||
+            array_key_exists('end_date', $filters) && $filters['end_date'] !== null
+        ) {
+            $query->byDateRange(
+                $filters['start_date'] ?? null,
+                $filters['end_date'] ?? null
+            );
+        }
+
+        if (array_key_exists('status', $filters) && $filters['status'] === 'published') {
+            $query->published();
+        } else {
+            $query->published();
+        }
+
+        return QueryBuilder::for($query)
+            ->allowedFilters(['title', 'status', 'category_id', 'author_id'])
+            ->allowedSorts(['title', 'published_at', 'created_at', 'reading_time'])
+            ->defaultSort('-published_at');
+    }
+
+    public function getPublicPosts(array $filters = [], int $perPage = 15): LengthAwarePaginator
+    {
+        return $this->buildPublicPostQuery($filters)
+            ->paginate($perPage);
+    }
+}
