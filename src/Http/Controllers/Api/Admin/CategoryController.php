@@ -23,9 +23,11 @@ class CategoryController extends Controller
 
     public function store(Request $request): CategoryResource|JsonResponse
     {
+        $categoriesTable = config('blog.tables.categories', 'categories');
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'slug' => 'nullable|string|max:255|unique:categories,slug',
+            'slug' => 'nullable|string|max:255|unique:' . $categoriesTable . ',slug',
             'description' => 'nullable|string',
             'order' => 'nullable|integer|min:0',
         ]);
@@ -74,9 +76,11 @@ class CategoryController extends Controller
             ], 404);
         }
 
+        $categoriesTable = config('blog.tables.categories', 'categories');
+
         $validated = $request->validate([
             'name' => 'sometimes|string|max:255',
-            'slug' => ['nullable', 'string', 'max:255', Rule::unique('categories', 'slug')->ignore($id)],
+            'slug' => ['nullable', 'string', 'max:255', Rule::unique($categoriesTable, 'slug')->ignore($id)],
             'description' => 'nullable|string',
             'order' => 'nullable|integer|min:0',
         ]);

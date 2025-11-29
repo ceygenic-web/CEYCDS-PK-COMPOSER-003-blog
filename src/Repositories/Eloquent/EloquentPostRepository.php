@@ -270,6 +270,7 @@ class EloquentPostRepository implements PostRepositoryInterface
             ->where('status', 'published')
             ->whereNotNull('published_at')
             ->where('published_at', '<=', now());
+        $postsTable = (new Post())->getTable();
 
         // Use full-text search for MySQL/MariaDB if available, otherwise use LIKE
         if (in_array($driver, ['mysql', 'mariadb'])) {
@@ -283,7 +284,7 @@ class EloquentPostRepository implements PostRepositoryInterface
 
             // Calculate relevance score: title matches get higher weight
             $searchPattern = "%{$searchTerm}%";
-            $baseQuery->selectRaw('posts.*, 
+            $baseQuery->selectRaw($postsTable . '.*, 
                 (
                     CASE 
                         WHEN title LIKE ? THEN 3
@@ -304,7 +305,7 @@ class EloquentPostRepository implements PostRepositoryInterface
 
             // Calculate relevance score
             $searchPattern = "%{$searchTerm}%";
-            $baseQuery->selectRaw('posts.*, 
+            $baseQuery->selectRaw($postsTable . '.*, 
                 (
                     CASE 
                         WHEN title LIKE ? THEN 3

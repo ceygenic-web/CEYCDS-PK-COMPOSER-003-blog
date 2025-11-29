@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('posts', function (Blueprint $table) {
+        Schema::table('blog_posts', function (Blueprint $table) {
             $table->integer('index')->nullable()->after('reading_time')->comment('Display order index');
             $table->index('index');
         });
@@ -16,7 +16,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::table('posts', function (Blueprint $table) {
+        Schema::table('blog_posts', function (Blueprint $table) {
             $table->dropIndex(['index']);
             $table->dropColumn('index');
         });

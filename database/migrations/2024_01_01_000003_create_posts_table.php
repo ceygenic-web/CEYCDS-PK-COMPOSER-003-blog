@@ -8,14 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('posts', function (Blueprint $table) {
+        Schema::create('blog_posts', function (Blueprint $table) {
             $table->id();
             $table->string('title');
             $table->string('slug')->unique();
             $table->text('excerpt')->nullable();
             $table->longText('content');
             $table->string('featured_image')->nullable();
-            $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('category_id')->nullable()->constrained('blog_categories')->nullOnDelete();
             $table->foreignId('author_id')->nullable()->constrained('users')->nullOnDelete();
             $table->enum('status', ['draft', 'published', 'archived'])->default('draft');
             $table->timestamp('published_at')->nullable();
@@ -33,7 +33,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('posts');
+        Schema::dropIfExists('blog_posts');
     }
 };
 

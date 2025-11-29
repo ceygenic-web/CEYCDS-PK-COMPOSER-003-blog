@@ -144,7 +144,13 @@ class BlogVerifyDualStorageCommand extends Command
 
         // Test 6: Migrations
         $this->info('6. Testing Database Migrations...');
-        $tables = ['posts', 'categories', 'tags', 'post_tag'];
+        $tablesConfig = config('blog.tables');
+        $tables = [
+            $tablesConfig['posts'],
+            $tablesConfig['categories'],
+            $tablesConfig['tags'],
+            $tablesConfig['post_tag'],
+        ];
         $allTablesExist = true;
 
         foreach ($tables as $table) {
