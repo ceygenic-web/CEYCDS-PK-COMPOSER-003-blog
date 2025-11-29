@@ -8,10 +8,10 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('post_tag', function (Blueprint $table) {
+        Schema::create('blog_post_tag', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('post_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('tag_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('post_id')->constrained('blog_posts')->cascadeOnDelete();
+            $table->foreignId('tag_id')->constrained('blog_tags')->cascadeOnDelete();
             $table->timestamps();
 
             $table->unique(['post_id', 'tag_id']);
@@ -20,7 +20,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('post_tag');
+        Schema::dropIfExists('blog_post_tag');
     }
 };
 

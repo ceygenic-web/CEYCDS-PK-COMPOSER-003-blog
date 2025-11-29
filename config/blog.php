@@ -19,12 +19,12 @@ return [
 
     // Table Configuration - Customize table names to avoid conflicts
     'tables' => [
-        'posts' => env('BLOG_TABLE_POSTS', 'posts'),
-        'categories' => env('BLOG_TABLE_CATEGORIES', 'categories'),
-        'tags' => env('BLOG_TABLE_TAGS', 'tags'),
-        'author_profiles' => env('BLOG_TABLE_AUTHOR_PROFILES', 'author_profiles'),
-        'media' => env('BLOG_TABLE_MEDIA', 'media'),
-        'post_tag' => env('BLOG_TABLE_POST_TAG', 'post_tag'),
+        'posts' => env('BLOG_TABLE_POSTS', 'blog_posts'),
+        'categories' => env('BLOG_TABLE_CATEGORIES', 'blog_categories'),
+        'tags' => env('BLOG_TABLE_TAGS', 'blog_tags'),
+        'author_profiles' => env('BLOG_TABLE_AUTHOR_PROFILES', 'blog_author_profiles'),
+        'media' => env('BLOG_TABLE_MEDIA', 'blog_media'),
+        'post_tag' => env('BLOG_TABLE_POST_TAG', 'blog_post_tag'),
     ],
 
     // Feature Toggles - Enable/disable specific features
@@ -50,17 +50,17 @@ return [
     'validation' => [
         'post' => [
             'title' => env('BLOG_VALIDATION_POST_TITLE', 'required|string|max:255'),
-            'slug' => env('BLOG_VALIDATION_POST_SLUG', 'nullable|string|max:255|unique:posts,slug'),
+            'slug' => env('BLOG_VALIDATION_POST_SLUG', 'nullable|string|max:255|unique:blog_posts,slug'),
             'content' => env('BLOG_VALIDATION_POST_CONTENT', 'required|string'),
             'status' => env('BLOG_VALIDATION_POST_STATUS', 'nullable|in:draft,published,archived'),
         ],
         'category' => [
             'name' => env('BLOG_VALIDATION_CATEGORY_NAME', 'required|string|max:255'),
-            'slug' => env('BLOG_VALIDATION_CATEGORY_SLUG', 'nullable|string|max:255|unique:categories,slug'),
+            'slug' => env('BLOG_VALIDATION_CATEGORY_SLUG', 'nullable|string|max:255|unique:blog_categories,slug'),
         ],
         'tag' => [
             'name' => env('BLOG_VALIDATION_TAG_NAME', 'required|string|max:255'),
-            'slug' => env('BLOG_VALIDATION_TAG_SLUG', 'nullable|string|max:255|unique:tags,slug'),
+            'slug' => env('BLOG_VALIDATION_TAG_SLUG', 'nullable|string|max:255|unique:blog_tags,slug'),
         ],
     ],
 

@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('author_profiles', function (Blueprint $table) {
+        Schema::create('blog_author_profiles', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->unique()->constrained()->onDelete('cascade');
             $table->text('bio')->nullable();
@@ -20,7 +20,7 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('author_profiles');
+        Schema::dropIfExists('blog_author_profiles');
     }
 };
 

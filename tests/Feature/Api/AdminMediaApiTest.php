@@ -61,7 +61,9 @@ class AdminMediaApiTest extends TestCase
                 ],
             ]);
 
-        $this->assertDatabaseHas('media', [
+        $mediaTable = config('blog.tables.media', 'media');
+
+        $this->assertDatabaseHas($mediaTable, [
             'file_name' => 'test.jpg',
             'alt_text' => 'Test image',
             'caption' => 'This is a test',
@@ -77,7 +79,9 @@ class AdminMediaApiTest extends TestCase
         ]);
 
         $response->assertStatus(201);
-        $this->assertDatabaseHas('media', [
+        $mediaTable = config('blog.tables.media', 'media');
+
+        $this->assertDatabaseHas($mediaTable, [
             'file_name' => 'test.jpg',
         ]);
     }
@@ -211,7 +215,9 @@ class AdminMediaApiTest extends TestCase
         $response = $this->deleteJson("/api/blog/admin/media/{$media->id}");
 
         $response->assertStatus(204);
-        $this->assertDatabaseMissing('media', ['id' => $media->id]);
+        $mediaTable = config('blog.tables.media', 'media');
+
+        $this->assertDatabaseMissing($mediaTable, ['id' => $media->id]);
         $this->assertFalse(Storage::disk('public')->exists('blog/media/test.jpg'));
     }
 

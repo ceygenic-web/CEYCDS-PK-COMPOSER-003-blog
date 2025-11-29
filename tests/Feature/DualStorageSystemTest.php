@@ -129,7 +129,13 @@ class DualStorageSystemTest extends TestCase
      */
     public function test_database_migrations_create_tables(): void
     {
-        $tables = ['posts', 'categories', 'tags', 'post_tag'];
+        $tablesConfig = config('blog.tables');
+        $tables = [
+            $tablesConfig['posts'],
+            $tablesConfig['categories'],
+            $tablesConfig['tags'],
+            $tablesConfig['post_tag'],
+        ];
         
         foreach ($tables as $table) {
             $this->assertTrue(

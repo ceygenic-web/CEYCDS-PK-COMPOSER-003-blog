@@ -64,9 +64,11 @@ class TagController extends Controller
         }
 
         // Get posts by tag using relationship
+        $tagsTable = config('blog.tables.tags', 'tags');
+
         $query = \Ceygenic\Blog\Models\Post::query()
-            ->whereHas('tags', function ($q) use ($tag) {
-                $q->where('tags.id', $tag->id);
+            ->whereHas('tags', function ($q) use ($tag, $tagsTable) {
+                $q->where($tagsTable . '.id', $tag->id);
             });
         
         $posts = QueryBuilder::for($query)

@@ -194,16 +194,20 @@ class Post extends Model
     // Filter by tag
     public function scopeByTag($query, int $tagId)
     {
-        return $query->whereHas('tags', function ($q) use ($tagId) {
-            $q->where('tags.id', $tagId);
+        $tagsTable = config('blog.tables.tags', 'tags');
+
+        return $query->whereHas('tags', function ($q) use ($tagId, $tagsTable) {
+            $q->where($tagsTable . '.id', $tagId);
         });
     }
 
     // Filter by tags (multiple)
     public function scopeByTags($query, array $tagIds)
     {
-        return $query->whereHas('tags', function ($q) use ($tagIds) {
-            $q->whereIn('tags.id', $tagIds);
+        $tagsTable = config('blog.tables.tags', 'tags');
+
+        return $query->whereHas('tags', function ($q) use ($tagIds, $tagsTable) {
+            $q->whereIn($tagsTable . '.id', $tagIds);
         });
     }
 
